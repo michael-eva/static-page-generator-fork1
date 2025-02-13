@@ -1,0 +1,46 @@
+[
+    {
+      "name": "Midnight",
+      "colors": ["#1B1B1B", "#2C3E50", "#ECF0F1", "#95A5A6", "#34495E"]
+    },
+    {
+      "name": "Light",
+      "colors": ["#dad7cd", "#a3b18a", "#588157", "#3a5a40", "#344e41"]
+    },
+    {
+      "name": "Ocean",
+      "colors": ["#2E8BC0", "#145DA0", "#0C2D48", "#B1D4E0", "#F1F1F1"]
+    },
+    {
+      "name": "Sunset",
+      "colors": ["#FF7E5F", "#FEB47B", "#FF6F61", "#D7263D", "#3E1F47"]
+    },
+    {
+      "name": "Forest",
+      "colors": ["#2C5F2D", "#97BC62", "#A1C349", "#D9BF77", "#F3E9D2"]
+    },
+    {
+      "name": "Modern",
+      "colors": ["#007AFF", "#F5F5F7", "#333333", "#5856D6", "#FF2D55"]
+    },
+    {
+      "name": "Retro",
+      "colors": ["#F67280", "#C06C84", "#6C5B7B", "#355C7D", "#F8B195"]
+    },
+    {
+      "name": "Vibrant Web",
+      "colors": ["#EAE9FE", "#4322B7", "#0D0D17", "#45454F", "#0099FF", "#F1F1F4"]
+    },
+    {
+      "name": "Chill Vibes",
+      "colors": ["#4d65ff", "#c06522", "#f4ece8", "#000000", "#45454f"]
+    },
+    {
+      "name": "Modern Elegance",
+      "colors": ["#09090a", "#ffffff", "#000000", "#f1f1f4", "#0099ff"]
+    },
+    {
+      "name": "Elegant Contrast",
+      "colors": ["#000000", "#D2B48C", "#FFFFFF", "#333333"]
+    }
+  ]
