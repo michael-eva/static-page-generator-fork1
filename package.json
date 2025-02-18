@@ -10,6 +10,9 @@
     "build:css": "tailwindcss -i ./src/styles/tailwind.css -o ./dist/output.css --watch"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.750.0",
+    "@langchain/core": "^0.3.40",
+    "@langchain/openai": "^0.4.4",
     "@radix-ui/react-checkbox": "^1.1.4",
     "@radix-ui/react-slot": "^1.1.2",
     "@supabase/supabase-js": "^2.48.1",
@@ -23,7 +26,8 @@
     "react-dropzone": "^14.3.5",
     "shadcn-ui": "^0.9.4",
     "tailwind-merge": "^3.0.1",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
