@@ -1,36 +1,47 @@
 'use client'
+import { Template } from '@/types/template';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface SelectedCard {
-    index: number;
-    name: string;
-    colorPalette: string;
-    iframeSrc: string;
-}
 
 interface SelectedCardContextType {
-    selectedCard: SelectedCard | null;
-    setSelectedCard: (card: SelectedCard | null) => void;
+    selectedCard: Template | null;
+    setSelectedCard: (card: Template | null) => void;
+    isLoading: boolean;
 }
 
 const SelectedCardContext = createContext<SelectedCardContextType | undefined>(undefined);
 
 export const SelectedCardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [selectedCard, setSelectedCard] = useState<SelectedCard | null>(() => {
-        const savedCard = localStorage.getItem('selectedCard');
-        return savedCard ? JSON.parse(savedCard) : null;
-    });
+    const [selectedCard, setSelectedCard] = useState<Template | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
+    // Load saved card from localStorage on client side only
     useEffect(() => {
-        if (selectedCard) {
-            localStorage.setItem('selectedCard', JSON.stringify(selectedCard));
-        } else {
-            localStorage.removeItem('selectedCard');
+        try {
+            const savedCard = localStorage.getItem('selectedCard');
+            if (savedCard) {
+                setSelectedCard(JSON.parse(savedCard));
+            }
+        } catch (error) {
+            console.error('Error loading saved card:', error);
+        } finally {
+            setIsLoading(false);
         }
-    }, [selectedCard]);
+    }, []);
+
+    // Save card to localStorage when it changes
+    useEffect(() => {
+        if (!isLoading) {  // Only save after initial load
+            if (selectedCard) {
+                localStorage.setItem('selectedCard', JSON.stringify(selectedCard));
+            } else {
+                localStorage.removeItem('selectedCard');
+            }
+        }
+    }, [selectedCard, isLoading]);
 
     return (
-        <SelectedCardContext.Provider value={{ selectedCard, setSelectedCard }}>
+        <SelectedCardContext.Provider value={{ selectedCard, setSelectedCard, isLoading }}>
             {children}
         </SelectedCardContext.Provider>
     );

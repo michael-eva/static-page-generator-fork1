@@ -3,41 +3,148 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import React, { useState } from 'react';
+import { FormLabel } from '@/components/ui/form-label';
+import React, { useState, useEffect, useRef } from 'react';
 import colorPalettes from '@/data/color-palettes.json';
 import { useSelectedCard } from '@/context/SelectedCardContext';
 import ContactCard from './components/ContactCard';
+import ImageUpload from './components/ImageUpload';
+import { X } from 'lucide-react';
+import Image from 'next/image';
+import ImagePreview from './components/ImagePreview';
+
+interface ColorPalette {
+    name: string;
+    colors: string[];
+}
+
+type ContactType = 'form' | 'email' | 'phone' | 'subscribe' | '';
+
+interface FormData {
+    business_info: {
+        name: string | undefined;
+        description: string | undefined;
+        offerings: string[];
+        location: string;
+        images: {
+            path: string;
+            description: string;
+            file?: File | null;
+        }[];
+        design_preferences: {
+            style: string | undefined;
+            color_palette: string | undefined;
+        };
+        contact_preferences: {
+            type: ContactType;
+            business_hours: string;
+            contact_email: string;
+            contact_phone: string;
+        };
+        branding: {
+            logo_url: string | undefined;
+            default_logo_url?: string;
+            logo_file?: {
+                file: File | null;
+                name: string;
+                type: string;
+                size: number;
+                lastModified: number;
+                uploadedAt: string;
+            } | null;
+            tagline: string | undefined;
+        };
+    };
+}
 
 const BusinessForm = () => {
-    const { selectedCard } = useSelectedCard();
-    const [selectedContactType, setSelectedContactType] = useState<'form' | 'email' | 'phone' | null>(null);
-    const [formData, setFormData] = useState({
+    const { selectedCard, isLoading } = useSelectedCard();
+
+    const defaultFormData: FormData = {
         business_info: {
-            name: '',
-            description: '',
-            offerings: [''],
+            name: selectedCard?.name,
+            description: selectedCard?.description,
+            offerings: selectedCard?.offering ?? [''],
             location: '',
-            images: [{ description: '', image_url: '' }],
+            images: selectedCard?.images ?? [{ path: '', description: '' }],
             design_preferences: {
-                style: '',
+                style: selectedCard?.style,
                 color_palette: selectedCard?.colorPalette
             },
             contact_preferences: {
-                type: [],
+                type: '',
                 business_hours: '',
-                contact_email: ''
+                contact_email: '',
+                contact_phone: ''
             },
             branding: {
-                logo_url: '',
-                tagline: ''
+                logo_url: selectedCard?.logoUrl,
+                logo_file: null,
+                tagline: selectedCard?.tagline
             }
         }
-    });
+    };
 
+    // All useState hooks
+    const [formData, setFormData] = useState<FormData>(defaultFormData);
+    const [isClient, setIsClient] = useState(false);
     const [submitStatus, setSubmitStatus] = useState({ success: false, message: '' });
-    const [selectedPalette, setSelectedPalette] = useState(
-        colorPalettes.find(palette => palette.name === selectedCard?.colorPalette) || colorPalettes[0]
-    );
+    const [contactMethodError, setContactMethodError] = useState<string>('');
+
+    // All useRef hooks
+    const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
+    const styleRef = useRef<HTMLTextAreaElement | null>(null);
+    const contactMethodsRef = useRef<HTMLDivElement>(null);
+
+    const adjustTextareaHeight = () => {
+        if (descriptionRef.current) {
+            descriptionRef.current.style.height = 'auto';
+            descriptionRef.current.style.height = `${descriptionRef.current.scrollHeight}px`;
+        }
+    };
+
+    const adjustStyleTextareaHeight = () => {
+        if (styleRef.current) {
+            styleRef.current.style.height = 'auto';
+            styleRef.current.style.height = `${styleRef.current.scrollHeight}px`;
+        }
+    };
+
+    // All useEffect hooks
+    useEffect(() => {
+        setIsClient(true);
+        const savedData = localStorage.getItem('formData');
+        if (savedData) {
+            setFormData(JSON.parse(savedData));
+        }
+    }, []);
+
+    useEffect(() => {
+        if (isClient) {
+            localStorage.setItem('formData', JSON.stringify(formData));
+        }
+    }, [formData, isClient]);
+
+    useEffect(() => {
+        adjustTextareaHeight();
+    }, [formData.business_info.description]);
+
+    useEffect(() => {
+        adjustStyleTextareaHeight();
+    }, [formData.business_info.design_preferences.style]);
+
+    // Loading state
+    if (isLoading || !isClient) {
+        return (
+            <div className="max-w-5xl mx-auto p-6 space-y-8">
+                <div className="animate-pulse space-y-4">
+                    <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-full"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </div>
+            </div>
+        );
+    }
 
     // Handle adding new offering
     const addOffering = () => {
@@ -50,41 +157,8 @@ const BusinessForm = () => {
         }));
     };
 
-    // Handle adding new image
-    const addImage = () => {
-        setFormData(prev => ({
-            ...prev,
-            business_info: {
-                ...prev.business_info,
-                images: [...prev.business_info.images, { description: '', image_url: '' }]
-            }
-        }));
-    };
-
-    // Handle contact type checkbox changes
-    const handleContactTypeChange = (type) => {
-        setFormData(prev => {
-            const currentTypes = prev.business_info.contact_preferences.type;
-            const updatedTypes = currentTypes.includes(type)
-                ? currentTypes.filter(t => t !== type)
-                : [...currentTypes, type];
-
-            return {
-                ...prev,
-                business_info: {
-                    ...prev.business_info,
-                    contact_preferences: {
-                        ...prev.business_info.contact_preferences,
-                        type: updatedTypes
-                    }
-                }
-            };
-        });
-    };
-
     // Handle color palette selection
-    const handlePaletteSelection = (palette) => {
-        setSelectedPalette(palette);
+    const handlePaletteSelection = (palette: ColorPalette) => {
         setFormData(prev => ({
             ...prev,
             business_info: {
@@ -98,10 +172,30 @@ const BusinessForm = () => {
     };
 
     // Handle form submission
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        // Check if a contact method is selected
+        if (!formData.business_info.contact_preferences.type) {
+            setContactMethodError('Please select a contact method');
+            setSubmitStatus({ success: false, message: 'Please select a contact method before submitting.' });
+
+            // Scroll to the contact methods section
+            contactMethodsRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+            return;
+        }
+
         console.log('Form data:', formData);
+        setContactMethodError('');
         setSubmitStatus({ success: true, message: 'Form submitted successfully!' });
+    };
+
+    const handleRevertChanges = () => {
+        setFormData(defaultFormData);
+        localStorage.removeItem('formData');
     };
 
     return (
@@ -111,8 +205,14 @@ const BusinessForm = () => {
                 <h2 className="text-2xl font-bold">Basic Information</h2>
 
                 <div>
-                    <label className="block text-sm font-medium mb-1">Business Name</label>
+                    <FormLabel
+                        htmlFor="business-name"
+                        description="This is the name of your business. Enter it the way you want it to appear on your website."
+                    >
+                        Business Name <span className="text-red-500">*</span>
+                    </FormLabel>
                     <Input
+                        id="business-name"
                         type="text"
                         value={formData.business_info.name}
                         onChange={(e) => setFormData(prev => ({
@@ -125,13 +225,23 @@ const BusinessForm = () => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium mb-1">Description</label>
+                    <FormLabel
+                        htmlFor="business-description"
+                        description="This is a description of your business. It will be used to help us understand your business and create a website that is tailored to your needs. Enter as much detail as you can, this will help us create a better website for you."
+                    >
+                        Description <span className="text-red-500">*</span>
+                    </FormLabel>
                     <Textarea
+                        id="business-description"
                         value={formData.business_info.description}
-                        onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            business_info: { ...prev.business_info, description: e.target.value }
-                        }))}
+                        onChange={(e) => {
+                            setFormData(prev => ({
+                                ...prev,
+                                business_info: { ...prev.business_info, description: e.target.value }
+                            }));
+                            adjustTextareaHeight();
+                        }}
+                        ref={descriptionRef}
                         className="w-full"
                         required
                     />
@@ -141,6 +251,13 @@ const BusinessForm = () => {
             {/* Offerings */}
             <div className="space-y-4">
                 <h2 className="text-2xl font-bold">Offerings</h2>
+                <p className="text-gray-600 mb-4">Enter the offerings of your business. This will be used to help us understand your business and create a website that is tailored to your needs. Enter as much detail as you can, this will help us create a better website for you.</p>
+                <FormLabel
+                    htmlFor="offerings"
+                    description="List your products or services. Each offering should include a name and description."
+                >
+                    Offerings <span className="text-red-500">*</span>
+                </FormLabel>
                 {formData.business_info.offerings.map((offering, index) => (
                     <div key={index} className="flex gap-2">
                         <Input
@@ -180,13 +297,14 @@ const BusinessForm = () => {
                     onClick={addOffering}
                     className="bg-blue-500 text-white"
                 >
-                    Add Offering
+                    Add Another Offering +
                 </Button>
             </div>
 
             {/* Location */}
             <div>
                 <h2 className="text-2xl font-bold mb-4">Location</h2>
+                <p className="text-gray-600 mb-4">Enter the location of your business. Leave blank if you don&apos;t want to display a location on your website.</p>
                 <Input
                     type="text"
                     value={formData.business_info.location}
@@ -195,87 +313,96 @@ const BusinessForm = () => {
                         business_info: { ...prev.business_info, location: e.target.value }
                     }))}
                     className="w-full"
-                    required
                 />
             </div>
 
             {/* Images */}
             <div className="space-y-4">
                 <h2 className="text-2xl font-bold">Images</h2>
-                {formData.business_info.images.map((image, index) => (
-                    <div key={index} className="space-y-2">
-                        <Input
-                            type="text"
-                            value={image.image_url}
-                            onChange={(e) => {
-                                const newImages = [...formData.business_info.images];
-                                newImages[index] = { ...image, image_url: e.target.value };
+                <p className="text-gray-600 mb-4">Upload images that showcase your business. You can drag and drop multiple images at once or select them individually.</p>
+                <div className="p-4 border rounded-lg">
+                    <ImageUpload
+                        value={null}
+                        onChange={(file) => {
+                            if (file) {
                                 setFormData(prev => ({
                                     ...prev,
-                                    business_info: { ...prev.business_info, images: newImages }
+                                    business_info: {
+                                        ...prev.business_info,
+                                        images: [{
+                                            path: '',
+                                            file,
+                                            description: ''
+                                        }, ...prev.business_info.images]
+                                    }
                                 }));
-                            }}
-                            className="w-full"
-                            placeholder="Image URL"
-                            required
-                        />
-                        <Input
-                            type="text"
-                            value={image.description}
-                            onChange={(e) => {
-                                const newImages = [...formData.business_info.images];
-                                newImages[index] = { ...image, description: e.target.value };
-                                setFormData(prev => ({
-                                    ...prev,
-                                    business_info: { ...prev.business_info, images: newImages }
-                                }));
-                            }}
-                            className="w-full"
-                            placeholder="Image description"
-                            required
-                        />
-                    </div>
-                ))}
-                <Button
-                    type="button"
-                    onClick={addImage}
-                    className="bg-blue-500 text-white"
-                >
-                    Add Image
-                </Button>
+                            }
+                        }}
+                        multiple={true}
+                        onMultipleFiles={(files) => {
+                            const newImages = files.map(file => ({
+                                path: '',
+                                file,
+                                description: ''
+                            }));
+                            setFormData(prev => ({
+                                ...prev,
+                                business_info: {
+                                    ...prev.business_info,
+                                    images: [...newImages, ...prev.business_info.images]
+                                }
+                            }));
+                        }}
+                    />
+                </div>
+
+                {/* Image Preview List */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {formData.business_info.images
+                        .filter(image => (image.path && image.path !== '') || (image.file instanceof File))
+                        .map((image, index) => (
+                            <ImagePreview
+                                key={`image-${index}`}
+                                image={image}
+                                index={index}
+                                onRemove={(index) => {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        business_info: {
+                                            ...prev.business_info,
+                                            images: prev.business_info.images.filter((_, i) => i !== index)
+                                        }
+                                    }));
+                                }}
+                                onDescriptionChange={(index, description) => {
+                                    const newImages = [...formData.business_info.images];
+                                    newImages[index] = { ...newImages[index], description };
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        business_info: { ...prev.business_info, images: newImages }
+                                    }));
+                                }}
+                            />
+                        ))}
+                </div>
             </div>
 
             {/* Design Preferences */}
             <div className="space-y-4">
                 <h2 className="text-2xl font-bold">Design Preferences</h2>
                 <div>
-                    <label className="block text-sm font-medium mb-1">Style</label>
-                    <Input
-                        type="text"
-                        value={formData.business_info.design_preferences.style}
-                        onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            business_info: {
-                                ...prev.business_info,
-                                design_preferences: {
-                                    ...prev.business_info.design_preferences,
-                                    style: e.target.value
-                                }
-                            }
-                        }))}
-                        className="w-full"
-                        required
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium mb-1">Color Palettes</label>
-                    <div className="flex flex-wrap gap-4">
-                        {colorPalettes.map(palette => (
+                    <FormLabel
+                        htmlFor="color-palette"
+                        description="Choose a color palette that best represents your brand. This will be used as a base for your website&apos;s design."
+                    >
+                        Color Palette
+                    </FormLabel>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {colorPalettes.map((palette) => (
                             <div
                                 key={palette.name}
                                 onClick={() => handlePaletteSelection(palette)}
-                                className={`cursor-pointer p-2 border-2 rounded-lg ${selectedPalette.name === palette.name ? 'border-blue-500' : 'border-transparent'
+                                className={`cursor-pointer p-2 border-2 rounded-lg ${formData.business_info.design_preferences.color_palette === palette.name ? 'border-blue-500' : 'border-transparent'
                                     }`}
                             >
                                 <div className="flex space-x-2">
@@ -292,36 +419,128 @@ const BusinessForm = () => {
                         ))}
                     </div>
                 </div>
+                <div>
+                    <FormLabel
+                        htmlFor="style-requirements"
+                        description="Enter any other style requirements or preferences for your website design that weren&apos;t covered by the color palette selection."
+                    >
+                        Style
+                    </FormLabel>
+                    <Textarea
+                        id="style-requirements"
+                        value={formData.business_info.design_preferences.style}
+                        onChange={(e) => {
+                            setFormData(prev => ({
+                                ...prev,
+                                business_info: {
+                                    ...prev.business_info,
+                                    design_preferences: {
+                                        ...prev.business_info.design_preferences,
+                                        style: e.target.value
+                                    }
+                                }
+                            }));
+                            adjustStyleTextareaHeight();
+                        }}
+                        ref={styleRef}
+                        className="w-full"
+                    />
+                </div>
             </div>
 
             {/* Contact Preferences */}
-            <div className="space-y-4">
+            <div ref={contactMethodsRef} className="space-y-4">
                 <h2 className="text-2xl font-bold">Contact Preferences</h2>
                 <p className="text-gray-600 mb-6">
                     Choose how your customers will get in touch with you. This will be your main call-to-action section,
                     and its styling will automatically adapt to match your selected template and color palette. Select one
-                    of the following contact methods that best suits your business needs.
+                    of the following contact methods that best suits your business&apos;s needs.
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <ContactCard
-                        type="form"
-                        selected={selectedContactType === 'form'}
-                        onSelect={() => setSelectedContactType('form')}
-                    />
-                    <ContactCard
-                        type="email"
-                        selected={selectedContactType === 'email'}
-                        onSelect={() => setSelectedContactType('email')}
-                    />
-                    <ContactCard
-                        type="phone"
-                        selected={selectedContactType === 'phone'}
-                        onSelect={() => setSelectedContactType('phone')}
-                    />
+                <FormLabel
+                    htmlFor="contact-methods"
+                    description="Choose how you want your customers to get in touch with you."
+                >
+                    Contact Methods <span className="text-red-500">*</span>
+                </FormLabel>
+                {contactMethodError && (
+                    <Alert variant="destructive" className="mb-4">
+                        <AlertDescription>{contactMethodError}</AlertDescription>
+                    </Alert>
+                )}
+                <div className="flex flex-wrap justify-center lg:justify-start gap-6">
+                    <div className="w-[calc(100%-1.5rem)] max-w-[350px] lg:w-[calc(50%-1.5rem)] xl:w-[calc(33.333%-1.5rem)] 2xl:w-[calc(25%-1.5rem)]">
+                        <ContactCard
+                            type="form"
+                            selected={formData.business_info.contact_preferences.type === 'form'}
+                            onSelect={() => setFormData(prev => ({
+                                ...prev,
+                                business_info: {
+                                    ...prev.business_info,
+                                    contact_preferences: {
+                                        ...prev.business_info.contact_preferences,
+                                        type: 'form'
+                                    }
+                                }
+                            }))}
+                        />
+                    </div>
+                    <div className="w-[calc(100%-1.5rem)] max-w-[350px] lg:w-[calc(50%-1.5rem)] xl:w-[calc(33.333%-1.5rem)] 2xl:w-[calc(25%-1.5rem)]">
+                        <ContactCard
+                            type="subscribe"
+                            selected={formData.business_info.contact_preferences.type === 'subscribe'}
+                            onSelect={() => setFormData(prev => ({
+                                ...prev,
+                                business_info: {
+                                    ...prev.business_info,
+                                    contact_preferences: {
+                                        ...prev.business_info.contact_preferences,
+                                        type: 'subscribe'
+                                    }
+                                }
+                            }))}
+                        />
+                    </div>
+                    <div className="w-[calc(100%-1.5rem)] max-w-[350px] lg:w-[calc(50%-1.5rem)] xl:w-[calc(33.333%-1.5rem)] 2xl:w-[calc(25%-1.5rem)]">
+                        <ContactCard
+                            type="email"
+                            selected={formData.business_info.contact_preferences.type === 'email'}
+                            onSelect={() => setFormData(prev => ({
+                                ...prev,
+                                business_info: {
+                                    ...prev.business_info,
+                                    contact_preferences: {
+                                        ...prev.business_info.contact_preferences,
+                                        type: 'email'
+                                    }
+                                }
+                            }))}
+                        />
+                    </div>
+                    <div className="w-[calc(100%-1.5rem)] max-w-[350px] lg:w-[calc(50%-1.5rem)] xl:w-[calc(33.333%-1.5rem)] 2xl:w-[calc(25%-1.5rem)]">
+                        <ContactCard
+                            type="phone"
+                            selected={formData.business_info.contact_preferences.type === 'phone'}
+                            onSelect={() => setFormData(prev => ({
+                                ...prev,
+                                business_info: {
+                                    ...prev.business_info,
+                                    contact_preferences: {
+                                        ...prev.business_info.contact_preferences,
+                                        type: 'phone'
+                                    }
+                                }
+                            }))}
+                        />
+                    </div>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium mb-1">Business Hours</label>
+                    <FormLabel
+                        htmlFor="business-hours"
+                        description="Enter the business hours of your business. Leave blank if you don&apos;t want to display business hours on your website."
+                    >
+                        Business Hours
+                    </FormLabel>
                     <Input
                         type="text"
                         value={formData.business_info.contact_preferences.business_hours}
@@ -336,12 +555,16 @@ const BusinessForm = () => {
                             }
                         }))}
                         className="w-full"
-                        required
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium mb-1">Contact Email</label>
+                    <FormLabel
+                        htmlFor="contact-email"
+                        description="Enter your contact email. This will be used to send you messages from your customers."
+                    >
+                        Contact Email
+                    </FormLabel>
                     <Input
                         type="email"
                         value={formData.business_info.contact_preferences.contact_email}
@@ -356,7 +579,31 @@ const BusinessForm = () => {
                             }
                         }))}
                         className="w-full"
-                        required
+                        required={formData.business_info.contact_preferences.type === 'email' || formData.business_info.contact_preferences.type === 'form'}
+                    />
+                </div>
+                <div>
+                    <FormLabel
+                        htmlFor="contact-phone"
+                        description="Enter your contact phone number. This will be used to send you messages from your customers."
+                    >
+                        Contact Phone Number
+                    </FormLabel>
+                    <Input
+                        type="tel"
+                        value={formData.business_info.contact_preferences.contact_phone}
+                        onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            business_info: {
+                                ...prev.business_info,
+                                contact_preferences: {
+                                    ...prev.business_info.contact_preferences,
+                                    contact_phone: e.target.value
+                                }
+                            }
+                        }))}
+                        className="w-full"
+                        required={formData.business_info.contact_preferences.type === 'phone'}
                     />
                 </div>
             </div>
@@ -365,27 +612,105 @@ const BusinessForm = () => {
             <div className="space-y-4">
                 <h2 className="text-2xl font-bold">Branding</h2>
                 <div>
-                    <label className="block text-sm font-medium mb-1">Logo URL</label>
-                    <Input
-                        type="text"
-                        value={formData.business_info.branding.logo_url}
-                        onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            business_info: {
-                                ...prev.business_info,
-                                branding: {
-                                    ...prev.business_info.branding,
-                                    logo_url: e.target.value
+                    <FormLabel
+                        htmlFor="logo"
+                        description="Upload a logo for your business. This will be used to display on your website as well as your favicon."
+                    >
+                        Logo <span className="text-red-500">*</span>
+                    </FormLabel>
+                    {(formData.business_info.branding.logo_url || (formData.business_info.branding.logo_file?.file instanceof File)) ? (
+                        <div className="my-4 p-4 border rounded-lg">
+                            <div className="relative w-full h-48">
+                                {(() => {
+                                    const logoFile = formData.business_info.branding.logo_file?.file;
+                                    const logoSrc = logoFile instanceof File
+                                        ? URL.createObjectURL(logoFile)
+                                        : (formData.business_info.branding.logo_url || null);
+
+                                    if (!logoSrc) return null;
+
+                                    return (
+                                        <Image
+                                            src={logoSrc}
+                                            alt={formData.business_info.branding.logo_file ? "Uploaded logo" : "Template logo"}
+                                            fill
+                                            style={{ objectFit: 'contain' }}
+                                            className="rounded-md"
+                                        />
+                                    );
+                                })()}
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon"
+                                    className="absolute top-2 right-2"
+                                    onClick={() => {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            business_info: {
+                                                ...prev.business_info,
+                                                branding: {
+                                                    ...prev.business_info.branding,
+                                                    logo_url: prev.business_info.branding.default_logo_url || '',
+                                                    logo_file: null
+                                                }
+                                            }
+                                        }));
+                                    }}
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between">
+                                <p className="text-sm text-gray-600">
+                                    {formData.business_info.branding.logo_file
+                                        ? `Custom logo: ${formData.business_info.branding.logo_file.name}`
+                                        : "Default template logo"}
+                                </p>
+                                {formData.business_info.branding.logo_file && (
+                                    <p className="text-xs text-gray-500">
+                                        {Math.round(formData.business_info.branding.logo_file.size / 1024)}KB
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <ImageUpload
+                            value={null}
+                            onChange={(file) => {
+                                if (file instanceof File) {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        business_info: {
+                                            ...prev.business_info,
+                                            branding: {
+                                                ...prev.business_info.branding,
+                                                default_logo_url: prev.business_info.branding.logo_url,
+                                                logo_url: '',
+                                                logo_file: {
+                                                    file,
+                                                    name: file.name,
+                                                    type: file.type,
+                                                    size: file.size,
+                                                    lastModified: file.lastModified,
+                                                    uploadedAt: new Date().toISOString()
+                                                }
+                                            }
+                                        }
+                                    }));
                                 }
-                            }
-                        }))}
-                        className="w-full"
-                        required
-                    />
+                            }}
+                        />
+                    )}
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium mb-1">Tagline</label>
+                    <FormLabel
+                        htmlFor="tagline"
+                        description="Enter a tagline for your business."
+                    >
+                        Tagline
+                    </FormLabel>
                     <Input
                         type="text"
                         value={formData.business_info.branding.tagline}
@@ -400,25 +725,33 @@ const BusinessForm = () => {
                             }
                         }))}
                         className="w-full"
-                        required
                     />
                 </div>
             </div>
 
-            {/* Submit Button */}
-            <div>
+            {/* Submit and Revert Buttons */}
+            <div className="flex justify-between">
                 <Button
                     type="submit"
-                    className="w-full bg-green-500 text-white hover:bg-green-600"
+                    className="bg-green-500 text-white hover:bg-green-600"
                 >
                     Submit
                 </Button>
+                <Button
+                    type="button"
+                    onClick={handleRevertChanges}
+                    className="bg-gray-500 text-white hover:bg-gray-600"
+                >
+                    Revert Changes
+                </Button>
             </div>
 
-            {/* Success Message */}
-            {submitStatus.success && (
-                <Alert className="mt-4">
-                    <AlertDescription>{submitStatus.message}</AlertDescription>
+            {/* Success/Error Message */}
+            {submitStatus.message && (
+                <Alert className={`mt-4 ${submitStatus.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                    <AlertDescription className={submitStatus.success ? 'text-green-800' : 'text-red-800'}>
+                        {submitStatus.message}
+                    </AlertDescription>
                 </Alert>
             )}
         </form>

@@ -1,25 +1,42 @@
 'use client'
 import { Button } from '@/components/ui/button';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSelectedCard } from '@/context/SelectedCardContext';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { templates } from '@/data/templates';
 
 const CardComponent = () => {
-    const { selectedCard, setSelectedCard } = useSelectedCard();
     const router = useRouter();
-    const images = [
-        { src: '/thumbnails/Screenshot 2025-02-09 at 3.04.54 pm.png', description: 'Landify', iframe: '/templates/landify.html', colorPalette: 'Vibrant Web' },
-        { src: '/thumbnails/Screenshot 2025-02-09 at 3.05.15 pm.png', description: 'Dann Good Coffee', iframe: '/templates/dann-good-coffee.html', colorPalette: 'Chill Vibes' },
-        { src: '/thumbnails/Screenshot 2025-02-09 at 3.05.39 pm.png', description: '92 Rhys', iframe: '/templates/92-rhys.html', colorPalette: 'Elegant Contrast' },
-    ];
+    const websites = templates;
+    const { selectedCard, setSelectedCard } = useSelectedCard();
+
+    // Initialize with null and update from localStorage in useEffect
+    useEffect(() => {
+        const savedCard = typeof window !== 'undefined' ? localStorage.getItem('selectedCard') : null;
+        if (savedCard) {
+            setSelectedCard(JSON.parse(savedCard));
+        }
+    }, [setSelectedCard]);
 
     const handleClick = (index: number) => {
-        setSelectedCard({
+        const newCard = {
             index,
-            name: images[index].description,
-            colorPalette: images[index].colorPalette,
-            iframeSrc: images[index].iframe
-        });
+            src: websites[index].src,
+            name: websites[index].name,
+            colorPalette: websites[index].colorPalette,
+            iframeSrc: websites[index].iframeSrc,
+            description: websites[index].description || '',
+            offering: websites[index].offering || [],
+            images: (websites[index].images ?? []).map(image => ({ path: image.path, description: image.description })),
+            style: websites[index].style || '',
+            tagline: websites[index].tagline || '',
+            logoUrl: websites[index].logoUrl || ''
+        };
+        setSelectedCard(newCard);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('selectedCard', JSON.stringify(newCard));
+        }
     };
 
     return (
@@ -31,14 +48,22 @@ const CardComponent = () => {
             </div>
 
             <div className={`flex flex-row justify-center items-center space-x-4 transition-all duration-300 ${selectedCard !== null ? 'mt-4' : ''}`}>
-                {images.map((image, index) => (
+                {websites.map((image, index) => (
                     <div
                         key={index}
                         className={`m-2 p-4 border border-gray-300 rounded-lg transition-transform duration-300 cursor-pointer ${selectedCard?.index === index ? 'scale-110' : 'hover:scale-105'}`}
                         onClick={() => handleClick(index)}
                     >
-                        <img src={image.src} alt={`Thumbnail ${index + 1}`} className={`w-32 h-auto ${selectedCard !== null ? 'w-24' : ''}`} />
-                        <p className="text-center mt-2">{image.description}</p>
+                        <div className="relative w-32 h-32">
+                            <Image
+                                src={image.src}
+                                alt={`Thumbnail ${index + 1}`}
+                                fill
+                                style={{ objectFit: 'contain' }}
+                                className={selectedCard !== null ? 'w-24' : ''}
+                            />
+                        </div>
+                        <p className="text-center mt-2">{image.name}</p>
                     </div>
                 ))}
             </div>
