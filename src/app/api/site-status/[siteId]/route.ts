@@ -1,25 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { S3Service } from "@/app/services/s3";
 import { checkRateLimit } from "@/app/core/security";
 
 const s3 = new S3Service();
 
-export async function GET(
+type GetSiteStatusParams = Promise<{ siteId: string }>;
+
+export async function POST(
   request: NextRequest,
-  { params }: { params: { siteId: string } }
+  context: { params: GetSiteStatusParams }
 ) {
+  const resolvedParams = await context.params;
+
+  if (!resolvedParams.siteId) {
+    return NextResponse.json(
+      { error: "Site ID is required" },
+      { status: 400 }
+    );
+  }    
+
   try {
     await checkRateLimit(request);
-    const siteId = params.siteId;
-
-    // Wrap in Promise.resolve() to satisfy type constraints
-    const status = await Promise.resolve().then(async () => {
-      return await s3.getDeploymentStatus(siteId);
-    });
-
+    const status = await s3.getDeploymentStatus(resolvedParams.siteId);
+  
     return NextResponse.json({
-      site_id: siteId,
-      status
+      site_id: resolvedParams.siteId,
+      status,
     });
   } catch (error) {
     console.error("Error getting site status:", error);
@@ -28,4 +34,4 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}

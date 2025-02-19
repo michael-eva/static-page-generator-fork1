@@ -65,9 +65,8 @@ export class LandingPageGenerator {
       Requirements:
       1. Use modern HTML5 and Tailwind CSS
       2. Make it responsive and mobile-first
-      3. Include proper meta tags and Tailwind CDN
-      4. Implement the specified contact method ({contactType})
-      5. Use the specified color palette for styling
+      3. Implement the specified contact method ({contactType})
+      4. Use the specified color palette for styling
       
       The HTML must start with proper DOCTYPE and include all necessary meta tags.
         Example structure:
@@ -76,6 +75,7 @@ export class LandingPageGenerator {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
             ... (rest of head content) ...
         </head>
         <body>

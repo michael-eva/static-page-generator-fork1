@@ -3,9 +3,9 @@
 import { useSearchParams } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 
-export default function ConfigureDomain() {
+function ConfigureDomainContent() {
   const searchParams = useSearchParams();
   const siteId = searchParams.get('siteId');
   const previewUrl = searchParams.get('previewUrl');
@@ -15,6 +15,7 @@ export default function ConfigureDomain() {
     const checkDeployment = async () => {
       try {
         const response = await fetch(`/api/site-status/${siteId}`, {
+          method: 'POST',
           headers: {
             'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || ''
           }
@@ -100,5 +101,21 @@ export default function ConfigureDomain() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function ConfigureDomain() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto p-6">
+        <Alert>
+          <AlertDescription>
+            Loading configuration...
+          </AlertDescription>
+        </Alert>
+      </div>
+    }>
+      <ConfigureDomainContent />
+    </Suspense>
   );
 } 
