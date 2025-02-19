@@ -15,6 +15,8 @@ import { X } from 'lucide-react';
 import Image from 'next/image';
 import ImagePreview from './components/ImagePreview';
 import { generateSiteId } from '../utils/siteId';
+import { useDialog } from '../hooks/use-dialog';
+import { CustomDialog } from '@/components/dialog';
 
 interface ColorPalette {
     name: string;
@@ -62,6 +64,7 @@ interface FormData {
 
 const BusinessForm = () => {
     const { selectedCard, isLoading } = useSelectedCard();
+    const { isOpen, open, close, toggle } = useDialog();
 
     const defaultFormData: FormData = {
         business_info: {
@@ -220,8 +223,8 @@ const BusinessForm = () => {
             window.location.href = `/configure_domain?siteId=${data.site_id}&previewUrl=${encodeURIComponent(data.preview_url)}`;
         } catch (error) {
             console.error('Error:', error);
-            setSubmitStatus({ 
-                success: false, 
+            setSubmitStatus({
+                success: false,
                 message: error instanceof Error ? error.message : 'Failed to generate site'
             });
             setIsGenerating(false);
@@ -229,8 +232,9 @@ const BusinessForm = () => {
     };
 
     const handleRevertChanges = () => {
-        setFormData(defaultFormData);
-        localStorage.removeItem('formData');
+        // setFormData(defaultFormData);
+        // localStorage.removeItem('formData');
+        toggle();
     };
 
     return (
@@ -244,7 +248,7 @@ const BusinessForm = () => {
                     </div>
                 </div>
             )}
-            <form onSubmit={handleSubmit} className="max-w-5xl mx-auto p-6 space-y-8">
+            <form onSubmit={handleSubmit} className="max-w-5xl mx-auto p-6 space-y-8 mt-16">
                 {/* Basic Information */}
                 <div className="space-y-4">
                     <h2 className="text-2xl font-bold">Basic Information</h2>
@@ -520,8 +524,8 @@ const BusinessForm = () => {
                             <AlertDescription>{contactMethodError}</AlertDescription>
                         </Alert>
                     )}
-                    <div className="flex flex-wrap justify-center lg:justify-start gap-6">
-                        <div className="w-[calc(100%-1.5rem)] max-w-[350px] lg:w-[calc(50%-1.5rem)] xl:w-[calc(33.333%-1.5rem)] 2xl:w-[calc(25%-1.5rem)]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="w-full max-w-[400px]">
                             <ContactCard
                                 type="form"
                                 selected={formData.business_info.contact_preferences.type === 'form'}
@@ -537,7 +541,7 @@ const BusinessForm = () => {
                                 }))}
                             />
                         </div>
-                        <div className="w-[calc(100%-1.5rem)] max-w-[350px] lg:w-[calc(50%-1.5rem)] xl:w-[calc(33.333%-1.5rem)] 2xl:w-[calc(25%-1.5rem)]">
+                        <div className="w-full max-w-[400px]">
                             <ContactCard
                                 type="subscribe"
                                 selected={formData.business_info.contact_preferences.type === 'subscribe'}
@@ -553,7 +557,7 @@ const BusinessForm = () => {
                                 }))}
                             />
                         </div>
-                        <div className="w-[calc(100%-1.5rem)] max-w-[350px] lg:w-[calc(50%-1.5rem)] xl:w-[calc(33.333%-1.5rem)] 2xl:w-[calc(25%-1.5rem)]">
+                        <div className="w-full max-w-[400px]">
                             <ContactCard
                                 type="email"
                                 selected={formData.business_info.contact_preferences.type === 'email'}
@@ -569,7 +573,7 @@ const BusinessForm = () => {
                                 }))}
                             />
                         </div>
-                        <div className="w-[calc(100%-1.5rem)] max-w-[350px] lg:w-[calc(50%-1.5rem)] xl:w-[calc(33.333%-1.5rem)] 2xl:w-[calc(25%-1.5rem)]">
+                        <div className="w-full max-w-[400px]">
                             <ContactCard
                                 type="phone"
                                 selected={formData.business_info.contact_preferences.type === 'phone'}
@@ -789,19 +793,19 @@ const BusinessForm = () => {
                 </div>
 
                 {/* Submit and Revert Buttons */}
-                <div className="flex justify-between">
-                    <Button
-                        type="submit"
-                        className="bg-green-500 text-white hover:bg-green-600"
-                    >
-                        Submit
-                    </Button>
+                <div className="flex justify-between gap-4">
                     <Button
                         type="button"
                         onClick={handleRevertChanges}
-                        className="bg-gray-500 text-white hover:bg-gray-600"
+                        className="bg-red-500 text-white hover:bg-gray-600 w-1/4"
                     >
                         Revert Changes
+                    </Button>
+                    <Button
+                        type="submit"
+                        className="bg-blue-500 text-white hover:bg-green-600 w-1/4"
+                    >
+                        Submit
                     </Button>
                 </div>
 
@@ -814,6 +818,20 @@ const BusinessForm = () => {
                     </Alert>
                 )}
             </form>
+
+            <CustomDialog
+                isOpen={isOpen}
+                onClose={close}
+                title="Revert Changes"
+                continueText="Yes, Revert Changes"
+                onContinue={() => {
+                    setFormData(defaultFormData);
+                    localStorage.removeItem('formData');
+                    close();
+                }}
+            >
+                <p>Are you sure you want to revert all changes? This action cannot be undone.</p>
+            </CustomDialog>
         </>
     );
 };
