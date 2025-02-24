@@ -17,6 +17,7 @@ import ImagePreview from './components/ImagePreview';
 import { generateSiteId } from '../utils/siteId';
 import { useDialog } from '../hooks/use-dialog';
 import { CustomDialog } from '@/components/dialog';
+import { supabase } from '@/lib/supabase';
 
 interface ColorPalette {
     name: string;
@@ -65,6 +66,17 @@ interface FormData {
 const BusinessForm = () => {
     const { selectedCard, isLoading } = useSelectedCard();
     const { isOpen, open, close, toggle } = useDialog();
+    const [session, setSession] = useState<any>(null);
+    const [authError, setAuthError] = useState<any>(null);
+
+    useEffect(() => {
+        const getSession = async () => {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            setSession(session);
+            setAuthError(error);
+        };
+        getSession();
+    }, []);
 
     const defaultFormData: FormData = {
         business_info: {
@@ -90,7 +102,6 @@ const BusinessForm = () => {
             }
         }
     };
-
     // All useState hooks
     const [formData, setFormData] = useState<FormData>(defaultFormData);
     const [isClient, setIsClient] = useState(false);
@@ -191,9 +202,22 @@ const BusinessForm = () => {
     // Handle form submission
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setIsGenerating(true);
 
+        // Check if user is logged in
         try {
+
+            if (!session) {
+                // User is not logged in
+                setSubmitStatus({
+                    success: false,
+                    message: 'Please log in to generate your site'
+                });
+                window.location.href = '/auth/sign-in?returnUrl=questionnaire';
+                return;
+            }
+
+            setIsGenerating(true);
+
             const response = await fetch('/api/generate-site', {
                 method: 'POST',
                 headers: {

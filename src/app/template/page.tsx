@@ -5,12 +5,12 @@ import { useSelectedCard } from '@/context/SelectedCardContext';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { templates } from '@/data/templates';
+import { supabase } from '@/lib/supabase';
 
 const CardComponent = () => {
     const router = useRouter();
     const websites = templates;
     const { selectedCard, setSelectedCard } = useSelectedCard();
-
     // Initialize with null and update from localStorage in useEffect
     useEffect(() => {
         const savedCard = typeof window !== 'undefined' ? localStorage.getItem('selectedCard') : null;
