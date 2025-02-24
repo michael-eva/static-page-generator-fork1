@@ -1,9 +1,9 @@
 'use client'
 import { supabase } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { useState, Suspense } from "react"
 
-export default function SignInPage() {
+function SignInContent() {
     const searchParams = useSearchParams()
     const returnUrl = searchParams.get('returnUrl') || '/'
     const [email, setEmail] = useState('')
@@ -12,6 +12,7 @@ export default function SignInPage() {
     const [error, setError] = useState<string | null>(null)
     const [isSignUp, setIsSignUp] = useState(false)
     const router = useRouter()
+
     const handleEmailAuth = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
@@ -19,7 +20,7 @@ export default function SignInPage() {
 
         if (isSignUp) {
             // Sign up
-            const { data, error } = await supabase.auth.signUp({
+            const { error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
@@ -33,7 +34,7 @@ export default function SignInPage() {
             }
         } else {
             // Sign in
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             })
@@ -50,7 +51,7 @@ export default function SignInPage() {
         setLoading(true)
         setError(null)
 
-        const { data, error } = await supabase.auth.signInWithOAuth({
+        const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
                 redirectTo: `${window.location.origin}/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`
@@ -122,5 +123,13 @@ export default function SignInPage() {
                 </div>
             )}
         </div>
+    )
+}
+
+export default function SignInPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <SignInContent />
+        </Suspense>
     )
 }

@@ -5,7 +5,6 @@ import { useSelectedCard } from '@/context/SelectedCardContext';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { templates } from '@/data/templates';
-import { supabase } from '@/lib/supabase';
 
 const CardComponent = () => {
     const router = useRouter();
