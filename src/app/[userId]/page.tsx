@@ -3,8 +3,6 @@ import { MoreHorizontal } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { use } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"

@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ import { generateSiteId } from '../utils/siteId';
 import { useDialog } from '../../hooks/use-dialog';
 import { CustomDialog } from '@/components/dialog';
 import { supabase } from '@/lib/supabase';
+import { Session } from '@supabase/supabase-js';
 
 interface ColorPalette {
     name: string;
@@ -63,16 +65,14 @@ interface FormData {
 
 const BusinessForm = () => {
     const { selectedCard, isLoading } = useSelectedCard();
-    const { isOpen, open, close, toggle } = useDialog();
-    const [session, setSession] = useState<any>(null);
-    const [authError, setAuthError] = useState<any>(null);
+    const { isOpen, close, toggle } = useDialog();
+    const [session, setSession] = useState<Session | null>(null);
     const userId = session?.user?.id;
 
     useEffect(() => {
         const getSession = async () => {
-            const { data: { session }, error } = await supabase.auth.getSession();
+            const { data: { session } } = await supabase.auth.getSession();
             setSession(session);
-            setAuthError(error);
         };
         getSession();
     }, []);
@@ -105,7 +105,6 @@ const BusinessForm = () => {
     const [formData, setFormData] = useState<FormData>(defaultFormData);
     const [isClient, setIsClient] = useState(false);
     const [submitStatus, setSubmitStatus] = useState({ success: false, message: '' });
-    const [contactMethodError, setContactMethodError] = useState<string>('');
     const [uploadedAssets, setUploadedAssets] = useState<{
         images: { url: string; description: string; metadata: any }[];
         logo?: string;
@@ -543,11 +542,11 @@ const BusinessForm = () => {
                     >
                         Contact Methods <span className="text-red-500">*</span>
                     </FormLabel>
-                    {contactMethodError && (
+                    {/* {contactMethodError && (
                         <Alert variant="destructive" className="mb-4">
                             <AlertDescription>{contactMethodError}</AlertDescription>
                         </Alert>
-                    )}
+                    )} */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div className="w-full max-w-[400px]">
                             <ContactCard
