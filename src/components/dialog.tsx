@@ -25,7 +25,11 @@ export function CustomDialog({
     loading = false
 }: CustomDialogProps) {
     const handleCancel = () => {
-        onCancel ? onCancel() : onClose()
+        if (onCancel) {
+            onCancel();
+        } else {
+            onClose();
+        }
     }
 
     return (

@@ -10,7 +10,6 @@ const CardComponent = () => {
     const router = useRouter();
     const websites = templates;
     const { selectedCard, setSelectedCard } = useSelectedCard();
-
     // Initialize with null and update from localStorage in useEffect
     useEffect(() => {
         const savedCard = typeof window !== 'undefined' ? localStorage.getItem('selectedCard') : null;
