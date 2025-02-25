@@ -17,6 +17,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useWebsites } from "@/hooks/useWebsites"
 
 interface DashboardProps {
     params: Promise<{ userId: string }>;
@@ -28,13 +29,7 @@ export default function Dashboard({ params }: DashboardProps) {
     async function handleCreateNewProject() {
         router.push('/template')
     }
-    const { data: websites } = useQuery({
-        queryKey: ["websites"],
-        queryFn: async () => {
-            const { data } = await supabase.from("websites").select("*").eq("user_id", resolvedParams.userId);
-            return data;
-        },
-    });
+    const { data: websites } = useWebsites(resolvedParams.userId);
 
     return (
         <div className="min-h-screen w-full bg-muted/40 p-8">

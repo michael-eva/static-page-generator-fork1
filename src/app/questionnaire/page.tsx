@@ -1,6 +1,4 @@
 'use client'
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +13,7 @@ import { X } from 'lucide-react';
 import Image from 'next/image';
 import ImagePreview from './components/ImagePreview';
 import { generateSiteId } from '../utils/siteId';
-import { useDialog } from '../hooks/use-dialog';
+import { useDialog } from '../../hooks/use-dialog';
 import { CustomDialog } from '@/components/dialog';
 import { supabase } from '@/lib/supabase';
 
