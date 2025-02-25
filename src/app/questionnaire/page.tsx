@@ -68,6 +68,7 @@ const BusinessForm = () => {
     const { isOpen, open, close, toggle } = useDialog();
     const [session, setSession] = useState<any>(null);
     const [authError, setAuthError] = useState<any>(null);
+    const userId = session?.user?.id;
 
     useEffect(() => {
         const getSession = async () => {
@@ -225,6 +226,7 @@ const BusinessForm = () => {
                     'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || ''
                 },
                 body: JSON.stringify({
+                    userId,
                     ...formData.business_info,
                     images: uploadedAssets.images.map(img => ({
                         url: img.url,

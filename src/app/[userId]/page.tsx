@@ -3,6 +3,8 @@ import { MoreHorizontal, Star } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { use } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -57,6 +59,13 @@ export default function Dashboard({ params }: DashboardProps) {
     async function handleCreateNewProject() {
         router.push('/template')
     }
+    const { data: websites } = useQuery({
+        queryKey: ["websites"],
+        queryFn: async () => {
+            const { data, error } = await supabase.from("websites").select("*").eq("user_id", resolvedParams.userId);
+            return data;
+        },
+    });
 
     return (
         <div className="min-h-screen w-full bg-muted/40 p-8">
@@ -66,19 +75,19 @@ export default function Dashboard({ params }: DashboardProps) {
                     <Button onClick={handleCreateNewProject}>Create New Project</Button>
                 </div>
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {projects.map((project) => (
+                    {websites?.map((project) => (
                         <Card key={project.id} className="overflow-hidden" onClick={() => router.push(`/${resolvedParams.userId}/edit/${project.id}`)}>
                             <div className="aspect-video relative">
                                 <Image
-                                    src={project.image || "/placeholder.svg"}
-                                    alt={project.title}
+                                    src={project.preview_url || "/placeholder.svg"}
+                                    alt={project.name}
                                     fill
                                     className="object-cover"
                                     priority
                                 />
                             </div>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-xl font-bold">{project.title}</CardTitle>
+                                <CardTitle className="text-xl font-bold">{project.name}</CardTitle>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -97,25 +106,21 @@ export default function Dashboard({ params }: DashboardProps) {
                             </CardHeader>
                             <CardContent>
                                 <div className="flex items-center gap-4">
-                                    <Badge variant={project.status === "Live" ? "default" : "secondary"} className="rounded-md">
-                                        {project.status}
+                                    <Badge variant={project.hosting_status === "Live" ? "default" : "secondary"} className="rounded-md">
+                                        {project.hosting_status}
                                     </Badge>
-                                    <span className="text-sm text-muted-foreground">Updated {project.lastUpdated}</span>
+                                    <span className="text-sm text-muted-foreground">Updated {project.updated_at}</span>
                                 </div>
                             </CardContent>
                             <CardFooter className="flex justify-between">
                                 <a
-                                    href={project.url}
+                                    href={project.project_url}
                                     className="text-sm text-muted-foreground hover:underline"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
-                                    {project.url}
+                                    {project.project_url}
                                 </a>
-                                <div className="flex items-center gap-1">
-                                    <Star className="h-4 w-4" />
-                                    <span className="text-sm font-medium">{project.stars}</span>
-                                </div>
                             </CardFooter>
                         </Card>
                     ))}
