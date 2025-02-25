@@ -17,13 +17,62 @@ export default function ProjectEditPage({ params }: PageProps) {
     const { data: websites, isLoading, error } = useWebsites(userId);
     const [isChatMinimized, setIsChatMinimized] = useState(false);
 
-    if (isLoading) return <div>Loading...</div>;
+    if (isLoading) return (
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-4" /> {/* Title skeleton */}
+
+            <PanelGroup
+                direction="horizontal"
+                className="min-h-[calc(100vh-200px)]"
+            >
+                {/* Preview Panel Skeleton */}
+                <Panel
+                    defaultSize={75}
+                    minSize={50}
+                    maxSize={90}
+                >
+                    <Card className="h-full flex flex-col">
+                        <CardHeader>
+                            <div className="h-6 w-24 bg-gray-200 rounded animate-pulse" /> {/* Card title skeleton */}
+                        </CardHeader>
+                        <CardContent className="flex-1 p-0">
+                            <div className="h-full w-full bg-gray-200 rounded-lg animate-pulse" />
+                        </CardContent>
+                    </Card>
+                </Panel>
+
+                <PanelResizeHandle>
+                    <GripVertical className="h-4 w-4" />
+                </PanelResizeHandle>
+
+                {/* Chat Panel Skeleton */}
+                <Panel
+                    defaultSize={25}
+                    minSize={10}
+                    maxSize={50}
+                >
+                    <Card className="h-full">
+                        <CardHeader>
+                            <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" /> {/* Chat title skeleton */}
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-col gap-4">
+                                <div className="h-12 bg-gray-200 rounded animate-pulse" />
+                                <div className="h-12 bg-gray-200 rounded animate-pulse" />
+                                <div className="h-12 bg-gray-200 rounded animate-pulse" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Panel>
+            </PanelGroup>
+        </div>
+    );
+
     if (error) return <div>Error loading website</div>;
 
     const website = websites?.find((website) => website.id === projectId);
     if (!website) return <div>Website not found</div>;
 
-    const deploymentStatus = 'completed'
 
     return (
         <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -44,19 +93,13 @@ export default function ProjectEditPage({ params }: PageProps) {
                             <CardTitle>Site Preview</CardTitle>
                         </CardHeader>
                         <CardContent className="flex-1 p-0">
-                            {deploymentStatus === 'completed' ? (
-                                <div className="h-full w-full border rounded-lg overflow-hidden">
-                                    <iframe
-                                        src={website.project_url}
-                                        className="w-full h-full"
-                                        title="Website Preview"
-                                    />
-                                </div>
-                            ) : (
-                                <div className="w-full aspect-[16/9] bg-gray-100 flex items-center justify-center">
-                                    <p>Loading preview...</p>
-                                </div>
-                            )}
+                            <div className="h-full w-full border rounded-lg overflow-hidden">
+                                <iframe
+                                    src={website.project_url}
+                                    className="w-full h-full"
+                                    title="Website Preview"
+                                />
+                            </div>
                         </CardContent>
                     </Card>
                 </Panel>
