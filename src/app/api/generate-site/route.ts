@@ -44,6 +44,7 @@ const generator = new LandingPageGenerator();
 const previewService = new PreviewService(s3);
 
 export async function POST(request: Request) {
+  let siteId: string | undefined;
   try {
     // Check rate limit and API key
     await checkRateLimit(request);
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
     const { userId } = validatedData;
 
     // Generate site ID
-    const siteId = `${validatedData.name
+    siteId = `${validatedData.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")}-${crypto.randomUUID().slice(0, 8)}`;
@@ -67,7 +68,6 @@ export async function POST(request: Request) {
         metadata: img.metadata,
       })),
     });
-    console.log("htmlContent", htmlContent);
 
     // Deploy to S3
     const [deployment, previewUrl] = await Promise.all([
@@ -82,6 +82,7 @@ export async function POST(request: Request) {
       name: validatedData.name,
       preview_url: previewUrl,
       project_url: deployment.url,
+      hosting_status: "deployed",
     });
 
     if (error) {
@@ -100,6 +101,19 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error generating site:", error);
+
+    // Update Supabase record with failed status if we have a siteId
+    if (typeof siteId === "string") {
+      const { error: updateError } = await supabase
+        .from("websites")
+        .update({ hosting_status: "failed" })
+        .eq("site_id", siteId);
+
+      if (updateError) {
+        console.error("Error updating hosting status:", updateError);
+      }
+    }
+
     return NextResponse.json(
       {
         error:

@@ -22,7 +22,7 @@ type BusinessInfo = {
     color_palette?: string;
   };
   contact_preferences: {
-    type: 'form' | 'email' | 'phone' | 'subscribe' | '';
+    type: "form" | "email" | "phone" | "subscribe" | "";
     business_hours: string;
     contact_email: string;
     contact_phone: string;
@@ -36,7 +36,7 @@ type BusinessInfo = {
     };
     tagline?: string;
   };
-}
+};
 
 export class LandingPageGenerator {
   private llm: ChatOpenAI;
@@ -88,37 +88,27 @@ export class LandingPageGenerator {
   }
 
   async generate(businessInfo: BusinessInfo): Promise<string> {
-    console.log('Generating site with assets:', {
-      images: businessInfo.images,
-      logo: businessInfo.branding.logo_url
-    });
-
     const messages = await this.template.formatMessages({
       name: businessInfo.name || "",
       description: businessInfo.description || "",
       offerings: businessInfo.offerings.join("\n"),
       location: businessInfo.location,
       images: businessInfo.images
-        .filter(img => img.url)
-        .map(img => `${img.url} - ${img.description} (${img.metadata.width}x${img.metadata.height}, aspect ratio: ${img.metadata.aspectRatio})`)
+        .filter((img) => img.url)
+        .map(
+          (img) =>
+            `${img.url} - ${img.description} (${img.metadata.width}x${img.metadata.height}, aspect ratio: ${img.metadata.aspectRatio})`
+        )
         .join("\n"),
       colorPalette: businessInfo.design_preferences.color_palette || "default",
       style: businessInfo.design_preferences.style || "modern and professional",
       contactType: businessInfo.contact_preferences.type || "form",
       businessHours: businessInfo.contact_preferences.business_hours,
       logoUrl: businessInfo.branding.logo_url || "",
-      tagline: businessInfo.branding.tagline || ""
-    });
-
-    console.log('Formatted template with image URLs:', {
-      images: businessInfo.images
-        .filter(img => img.url)
-        .map(img => `${img.url} - ${img.description} (${img.metadata.width}x${img.metadata.height}, aspect ratio: ${img.metadata.aspectRatio})`)
-        .join("\n"),
-      logoUrl: businessInfo.branding.logo_url || ""
+      tagline: businessInfo.branding.tagline || "",
     });
 
     const response = await this.llm.invoke(messages);
     return response.content.toString();
   }
-} 
+}
