@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       previewService.generatePreview(htmlContent, siteId),
     ]);
     // Save to Supabase
-    const { data, error } = await supabase.from("websites").insert({
+    const { error } = await supabase.from("websites").insert({
       site_id: siteId,
       user_id: userId,
       domain_connected: false,

@@ -1,5 +1,5 @@
 'use client'
-import { MoreHorizontal, Star } from "lucide-react"
+import { MoreHorizontal } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { use } from 'react'
@@ -18,37 +18,6 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-// Example project data
-const projects = [
-    {
-        id: 1,
-        title: "E-commerce Website",
-        image: "/placeholder.svg?height=200&width=400",
-        status: "Live",
-        lastUpdated: "2 hours ago",
-        stars: 24,
-        url: "https://example.com",
-    },
-    {
-        id: 2,
-        title: "Mobile App Dashboard",
-        image: "/placeholder.svg?height=200&width=400",
-        status: "In Development",
-        lastUpdated: "3 days ago",
-        stars: 12,
-        url: "https://example.com",
-    },
-    {
-        id: 3,
-        title: "Marketing Landing Page",
-        image: "/placeholder.svg?height=200&width=400",
-        status: "Planning",
-        lastUpdated: "1 week ago",
-        stars: 8,
-        url: "https://example.com",
-    },
-]
-
 interface DashboardProps {
     params: Promise<{ userId: string }>;
 }
@@ -62,7 +31,7 @@ export default function Dashboard({ params }: DashboardProps) {
     const { data: websites } = useQuery({
         queryKey: ["websites"],
         queryFn: async () => {
-            const { data, error } = await supabase.from("websites").select("*").eq("user_id", resolvedParams.userId);
+            const { data } = await supabase.from("websites").select("*").eq("user_id", resolvedParams.userId);
             return data;
         },
     });
