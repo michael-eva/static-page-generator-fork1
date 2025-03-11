@@ -116,11 +116,14 @@ const BusinessForm = () => {
     const [siteId] = useState(() => {
         return generateSiteId(formData.business_info.name || 'site');
     });
-
+    console.log(formData);
     // All useRef hooks
     const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
     const styleRef = useRef<HTMLTextAreaElement | null>(null);
     const contactMethodsRef = useRef<HTMLDivElement>(null);
+
+    // Add state for contact method error
+    const [contactMethodError, setContactMethodError] = useState<string | null>(null);
 
     const adjustTextareaHeight = () => {
         if (descriptionRef.current) {
@@ -197,11 +200,21 @@ const BusinessForm = () => {
         }));
     };
 
-    // Handle form submission
+    // Modify handleSubmit function
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        // Check if user is logged in
+        // Check if a contact method is selected
+        if (!formData.business_info.contact_preferences.type) {
+            setContactMethodError('Please select a contact method');
+            // Scroll to contact methods section
+            contactMethodsRef.current?.scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+
+        setContactMethodError(null);
+        console.log(formData);
+        // // Check if user is logged in
         try {
 
             if (!session) {
@@ -542,11 +555,11 @@ const BusinessForm = () => {
                     >
                         Contact Methods <span className="text-red-500">*</span>
                     </FormLabel>
-                    {/* {contactMethodError && (
+                    {contactMethodError && (
                         <Alert variant="destructive" className="mb-4">
                             <AlertDescription>{contactMethodError}</AlertDescription>
                         </Alert>
-                    )} */}
+                    )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div className="w-full max-w-[400px]">
                             <ContactCard

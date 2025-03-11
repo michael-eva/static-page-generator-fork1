@@ -65,7 +65,35 @@ export class LandingPageGenerator {
       Requirements:
       1. Use modern HTML5 and Tailwind CSS
       2. Make it responsive and mobile-first
-      3. Implement the specified contact method ({contactType})
+      3. Implement the specified contact method ({contactType}) with the following specifications:
+         - If contact type is "form": Include a contact form with fields for name, email, subject, and message
+         - If contact type is "subscribe": Include a subscription form with fields for name, email, and phone
+         The form should have this structure:
+         <form id="contactForm" class="...">
+           <!-- form fields here -->
+           <button type="submit" class="...">Submit</button>
+         </form>
+         
+         Add the following script functionality (implemented as a proper script tag):
+         - Prevent form default submission
+         - Collect form data into an object
+         - Log the form data
+         - Send the form data to the following endpoint with proper CORS handling in script tags:
+          - location: https://didv7clabiyxjx54b2jejyis4u0oidoa.lambda-url.us-east-2.on.aws/
+          - method: POST
+          - headers: 
+            Content-Type: application/json
+          - body format:
+            name: string
+            email: string
+            subject: string
+            message: string
+            toEmail: string
+          
+          - Add error and success handling:
+            - On success: Show an alert with "Message sent successfully!"
+            - On error: Show an alert with "Error sending message: " followed by the error message
+
       4. Use the specified color palette for styling
       
       The HTML must start with proper DOCTYPE and include all necessary meta tags.
@@ -80,6 +108,10 @@ export class LandingPageGenerator {
         </head>
         <body>
             ... (page content) ...
+            <script>
+              // Add this to your form submission handler
+              formData.toEmail = "{toEmail}";
+            </script>
         </body>
         </html>
 
@@ -106,6 +138,7 @@ export class LandingPageGenerator {
       businessHours: businessInfo.contact_preferences.business_hours,
       logoUrl: businessInfo.branding.logo_url || "",
       tagline: businessInfo.branding.tagline || "",
+      toEmail: businessInfo.contact_preferences.contact_email,
     });
 
     const response = await this.llm.invoke(messages);
