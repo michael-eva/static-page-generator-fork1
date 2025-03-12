@@ -1,5 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
+import colorPalettes from "@/data/color-palettes.json";
 
 export type ImageWithMetadata = {
   url: string;
@@ -14,6 +15,7 @@ export type ImageWithMetadata = {
 export type BusinessInfo = {
   userId: string;
   name: string;
+  htmlSrc: string;
   description: string;
   offerings: string[];
   location: string;
@@ -50,7 +52,10 @@ export class LandingPageGenerator {
     });
 
     this.template = ChatPromptTemplate.fromTemplate(`
-      Create a modern, responsive HTML landing page for this business:
+      Modify this template HTML for the business:
+      {templateHtml}
+      
+Business Details:
       Business Name: {name}
       Description: {description}
       Offerings: {offerings}
@@ -66,7 +71,17 @@ export class LandingPageGenerator {
       Requirements:
       1. Use modern HTML5 and Tailwind CSS
       2. Make it responsive and mobile-first
-      3. Implement the specified contact method ({contactType}) with the following specifications:
+      3. Color Usage Guidelines:
+         - Use 'background' color for the main page background
+         - Use 'surface' color for cards, sections, and elevated elements
+         - Use 'text' color for main body text and headings
+         - Use 'textSecondary' for less emphasized text
+         - Use 'primary' color for main CTAs and important buttons
+         - Use 'secondary' for supporting elements
+         - Use 'accent' sparingly for highlights or hover states
+         - Use inline styles for colors
+
+      4. Implement the specified contact method ({contactType}) with the following specifications:
          - If contact type is "form": Include a contact form with fields for name, email, subject, and message
          - If contact type is "subscribe": Include a subscription form with fields for name, email, and phone
          The form should have this structure:
@@ -95,7 +110,9 @@ export class LandingPageGenerator {
             - On success: Show an alert with "Message sent successfully!"
             - On error: Show an alert with "Error sending message: " followed by the error message
 
-      4. Use the specified color palette for styling
+      5. Use the specified color palette for styling
+      6. Use the current year for the copyright / all rights reserved
+      7. Favicon should be a logo image
       
       The HTML must start with proper DOCTYPE and include all necessary meta tags.
         Example structure:
@@ -107,19 +124,59 @@ export class LandingPageGenerator {
             <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
             ... (rest of head content) ...
         </head>
-        <body>
+        <body class="bg-[#color-from-background]">
+            <nav class="bg-[#color-from-surface]">
+                <h1 class="text-[#color-from-text]">...</h1>
+            </nav>
             ... (page content) ...
-            <script>
-            </script>
         </body>
         </html>
 
         Return only the complete HTML code, no explanations.
     `);
   }
+  private async fetchTemplate(iframeSrc: string): Promise<string> {
+    try {
+      // Create the full URL by combining the origin with the template path
+      const baseUrl =
+        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+      const templatePath = iframeSrc.startsWith("/")
+        ? iframeSrc
+        : `/${iframeSrc}`;
+      const fullUrl = `${baseUrl}${templatePath}`;
+
+      const response = await fetch(fullUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch template: ${response.statusText}`);
+      }
+      return await response.text();
+    } catch (error) {
+      console.error("Error fetching template:", error);
+      throw error;
+    }
+  }
 
   async generate(businessInfo: BusinessInfo): Promise<string> {
+    const templateHtml = await this.fetchTemplate(businessInfo.htmlSrc);
+    console.log("templateHtml", templateHtml);
+    const selectedPalette =
+      colorPalettes.find(
+        (palette) =>
+          palette.name.toLowerCase() ===
+          (
+            businessInfo.design_preferences.color_palette || "modern"
+          ).toLowerCase()
+      ) || colorPalettes.find((palette) => palette.name === "Modern");
+
+    // Convert roles object to color string
+    const colors = selectedPalette
+      ? Object.entries(selectedPalette.roles)
+          .map(([role, color]) => `${role}: ${color}`)
+          .join(", ")
+      : "";
+
     const messages = await this.template.formatMessages({
+      templateHtml,
       name: businessInfo.name || "",
       description: businessInfo.description || "",
       offerings: businessInfo.offerings.join("\n"),
@@ -131,7 +188,7 @@ export class LandingPageGenerator {
             `${img.url} - ${img.description} (${img.metadata.width}x${img.metadata.height}, aspect ratio: ${img.metadata.aspectRatio})`
         )
         .join("\n"),
-      colorPalette: businessInfo.design_preferences.color_palette || "default",
+      colorPalette: colors,
       style: businessInfo.design_preferences.style || "modern and professional",
       contactType: businessInfo.contact_preferences.type || "form",
       businessHours: businessInfo.contact_preferences.business_hours,

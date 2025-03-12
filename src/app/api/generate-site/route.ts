@@ -9,6 +9,7 @@ import { PreviewService } from "@/app/services/preview";
 const BusinessInfoSchema = z.object({
   userId: z.string(),
   name: z.string(),
+  htmlSrc: z.string(),
   description: z.string(),
   offerings: z.array(z.string()),
   location: z.string(),

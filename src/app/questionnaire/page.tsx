@@ -22,6 +22,7 @@ import { Session } from '@supabase/supabase-js';
 interface ColorPalette {
     name: string;
     colors: string[];
+    roles: Record<string, string>;
 }
 
 type ContactType = 'form' | 'email' | 'phone' | 'subscribe' | '';
@@ -32,6 +33,7 @@ interface FormData {
         description: string | undefined;
         offerings: string[];
         location: string;
+        htmlSrc: string;
         images: {
             path: string;
             description: string;
@@ -76,13 +78,13 @@ const BusinessForm = () => {
         };
         getSession();
     }, []);
-
     const defaultFormData: FormData = {
         business_info: {
             name: selectedCard?.name,
             description: selectedCard?.description,
             offerings: selectedCard?.offering ?? [''],
             location: '',
+            htmlSrc: selectedCard?.iframeSrc ?? '',
             images: selectedCard?.images ?? [{ path: '', description: '' }],
             design_preferences: {
                 style: selectedCard?.style,
@@ -202,7 +204,6 @@ const BusinessForm = () => {
     // Modify handleSubmit function
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
         // Check if a contact method is selected
         if (!formData.business_info.contact_preferences.type) {
             setContactMethodError('Please select a contact method');
@@ -492,16 +493,19 @@ const BusinessForm = () => {
                             {colorPalettes.map((palette) => (
                                 <div
                                     key={palette.name}
-                                    onClick={() => handlePaletteSelection(palette)}
-                                    className={`cursor-pointer p-2 border-2 rounded-lg ${formData.business_info.design_preferences.color_palette === palette.name ? 'border-blue-500' : 'border-transparent'
+                                    onClick={() => handlePaletteSelection(palette as unknown as ColorPalette)}
+                                    className={`cursor-pointer p-2 border-2 rounded-lg ${formData.business_info.design_preferences.color_palette === palette.name
+                                        ? 'border-blue-500'
+                                        : 'border-transparent'
                                         }`}
                                 >
                                     <div className="flex space-x-2">
-                                        {palette.colors.map((color, index) => (
+                                        {Object.entries(palette.roles).map(([role, color], index) => (
                                             <div
-                                                key={index}
+                                                key={role}
                                                 style={{ backgroundColor: color }}
                                                 className="w-8 h-8 rounded-full border"
+                                                title={role}
                                             />
                                         ))}
                                     </div>
