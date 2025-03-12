@@ -158,7 +158,6 @@ Business Details:
 
   async generate(businessInfo: BusinessInfo): Promise<string> {
     const templateHtml = await this.fetchTemplate(businessInfo.htmlSrc);
-    console.log("templateHtml", templateHtml);
     const selectedPalette =
       colorPalettes.find(
         (palette) =>
@@ -167,6 +166,27 @@ Business Details:
             businessInfo.design_preferences.color_palette || "modern"
           ).toLowerCase()
       ) || colorPalettes.find((palette) => palette.name === "Modern");
+
+    // Modify the prompt template to emphasize preserving the template structure
+    this.template = ChatPromptTemplate.fromTemplate(`
+      Modify this existing HTML template while preserving its structure and styling:
+      {templateHtml}
+      
+      Business Details:
+       ... (rest of the business details) ... 
+      
+      Requirements:
+      1. IMPORTANT: Preserve the template's existing structure, classes, and assets
+      2. Keep all script and CSS references from the original template
+      3. Only update the content, colors, and add new elements where needed
+      4. Maintain the template's responsive design and styling
+      5. Add the contact form functionality within the template's existing form section
+      6. Use the provided color palette for styling updates
+      7. Update text content with the business information
+      8. Keep the template's original CSS classes and add Tailwind classes only when needed
+      
+      Return the complete modified HTML code, preserving all original template features.
+    `);
 
     // Convert roles object to color string
     const colors = selectedPalette
