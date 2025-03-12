@@ -59,4 +59,30 @@ Our target audience is both established consultants looking to expand their netw
     tagline: "The top destination for the most talented consultants",
     logoUrl: "/templates-new/consultant-community/logo.svg",
   },
+  {
+    src: "/templates-new/directive/images/directive-preview.png",
+    name: "Directive",
+    iframeSrc: "/templates-new/directive/index.html",
+    colorPalette: "Elegant Contrast",
+    description:
+      "A sleek and modern template designed for a wide range of businesses and industries.",
+    images: [
+      {
+        path: "/templates-new/directive/images/header.jpg",
+        description: "Hero image",
+      },
+      {
+        path: "/templates-new/directive/images/pic01.jpg",
+        description: "Image 1",
+      },
+      {
+        path: "/templates-new/directive/images/pic02.jpg",
+        description: "Image 2",
+      },
+      {
+        path: "/templates-new/directive/images/pic03.jpg",
+        description: "Image 3",
+      },
+    ],
+  },
 ];

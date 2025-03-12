@@ -22,6 +22,7 @@ import { Session } from '@supabase/supabase-js';
 interface ColorPalette {
     name: string;
     colors: string[];
+    roles: Record<string, string>;
 }
 
 type ContactType = 'form' | 'email' | 'phone' | 'subscribe' | '';
@@ -32,6 +33,7 @@ interface FormData {
         description: string | undefined;
         offerings: string[];
         location: string;
+        htmlSrc: string;
         images: {
             path: string;
             description: string;
@@ -76,13 +78,13 @@ const BusinessForm = () => {
         };
         getSession();
     }, []);
-
     const defaultFormData: FormData = {
         business_info: {
             name: selectedCard?.name,
             description: selectedCard?.description,
             offerings: selectedCard?.offering ?? [''],
             location: '',
+            htmlSrc: selectedCard?.iframeSrc ?? '',
             images: selectedCard?.images ?? [{ path: '', description: '' }],
             design_preferences: {
                 style: selectedCard?.style,
@@ -116,11 +118,13 @@ const BusinessForm = () => {
     const [siteId] = useState(() => {
         return generateSiteId(formData.business_info.name || 'site');
     });
-
     // All useRef hooks
     const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
     const styleRef = useRef<HTMLTextAreaElement | null>(null);
     const contactMethodsRef = useRef<HTMLDivElement>(null);
+
+    // Add state for contact method error
+    const [contactMethodError, setContactMethodError] = useState<string | null>(null);
 
     const adjustTextareaHeight = () => {
         if (descriptionRef.current) {
@@ -197,11 +201,19 @@ const BusinessForm = () => {
         }));
     };
 
-    // Handle form submission
+    // Modify handleSubmit function
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        // Check if a contact method is selected
+        if (!formData.business_info.contact_preferences.type) {
+            setContactMethodError('Please select a contact method');
+            // Scroll to contact methods section
+            contactMethodsRef.current?.scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
 
-        // Check if user is logged in
+        setContactMethodError(null);
+        // // Check if user is logged in
         try {
 
             if (!session) {
@@ -481,16 +493,19 @@ const BusinessForm = () => {
                             {colorPalettes.map((palette) => (
                                 <div
                                     key={palette.name}
-                                    onClick={() => handlePaletteSelection(palette)}
-                                    className={`cursor-pointer p-2 border-2 rounded-lg ${formData.business_info.design_preferences.color_palette === palette.name ? 'border-blue-500' : 'border-transparent'
+                                    onClick={() => handlePaletteSelection(palette as unknown as ColorPalette)}
+                                    className={`cursor-pointer p-2 border-2 rounded-lg ${formData.business_info.design_preferences.color_palette === palette.name
+                                        ? 'border-blue-500'
+                                        : 'border-transparent'
                                         }`}
                                 >
                                     <div className="flex space-x-2">
-                                        {palette.colors.map((color, index) => (
+                                        {Object.entries(palette.roles).map(([role, color], index) => (
                                             <div
-                                                key={index}
+                                                key={role}
                                                 style={{ backgroundColor: color }}
                                                 className="w-8 h-8 rounded-full border"
+                                                title={role}
                                             />
                                         ))}
                                     </div>
@@ -542,11 +557,11 @@ const BusinessForm = () => {
                     >
                         Contact Methods <span className="text-red-500">*</span>
                     </FormLabel>
-                    {/* {contactMethodError && (
+                    {contactMethodError && (
                         <Alert variant="destructive" className="mb-4">
                             <AlertDescription>{contactMethodError}</AlertDescription>
                         </Alert>
-                    )} */}
+                    )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div className="w-full max-w-[400px]">
                             <ContactCard

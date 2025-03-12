@@ -67,7 +67,7 @@ const CardComponent = () => {
                 ))}
             </div>
             {selectedCard && (
-                <div className="relative w-full max-w-[50%] h-[50%]">
+                <div className="relative w-full max-w-[80%] h-[50%]">
                     <iframe
                         src={selectedCard.iframeSrc}
                         className="w-full h-full border-4 border-gray-400"

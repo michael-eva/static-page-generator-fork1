@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { S3Service } from "../../services/s3";
-import { LandingPageGenerator } from "../../services/generator";
+import { LandingPageGenerator, BusinessInfo } from "../../services/generator";
 import { checkRateLimit } from "../../core/security";
 import { supabase } from "@/lib/supabase";
 import { PreviewService } from "@/app/services/preview";
-// Input validation schema
+
 const BusinessInfoSchema = z.object({
   userId: z.string(),
   name: z.string(),
+  htmlSrc: z.string(),
   description: z.string(),
   offerings: z.array(z.string()),
   location: z.string(),
@@ -35,9 +36,16 @@ const BusinessInfoSchema = z.object({
   }),
   branding: z.object({
     logo_url: z.string().optional(),
+    logo_metadata: z
+      .object({
+        width: z.number(),
+        height: z.number(),
+        aspectRatio: z.number(),
+      })
+      .optional(),
     tagline: z.string().optional(),
   }),
-});
+}) satisfies z.ZodType<BusinessInfo>;
 
 const s3 = new S3Service();
 const generator = new LandingPageGenerator();
