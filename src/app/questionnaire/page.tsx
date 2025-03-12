@@ -116,7 +116,6 @@ const BusinessForm = () => {
     const [siteId] = useState(() => {
         return generateSiteId(formData.business_info.name || 'site');
     });
-    console.log(formData);
     // All useRef hooks
     const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
     const styleRef = useRef<HTMLTextAreaElement | null>(null);
@@ -213,7 +212,6 @@ const BusinessForm = () => {
         }
 
         setContactMethodError(null);
-        console.log(formData);
         // // Check if user is logged in
         try {
 

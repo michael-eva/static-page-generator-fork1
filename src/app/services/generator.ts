@@ -1,7 +1,7 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 
-type ImageWithMetadata = {
+export type ImageWithMetadata = {
   url: string;
   description: string;
   metadata: {
@@ -11,7 +11,8 @@ type ImageWithMetadata = {
   };
 };
 
-type BusinessInfo = {
+export type BusinessInfo = {
+  userId: string;
   name: string;
   description: string;
   offerings: string[];
@@ -77,18 +78,18 @@ export class LandingPageGenerator {
          Add the following script functionality (implemented as a proper script tag):
          - Prevent form default submission
          - Collect form data into an object
-         - Log the form data
          - Send the form data to the following endpoint with proper CORS handling in script tags:
           - location: https://didv7clabiyxjx54b2jejyis4u0oidoa.lambda-url.us-east-2.on.aws/
           - method: POST
           - headers: 
-            Content-Type: application/json
+            - 'Content-Type': 'application/json'
+            - 'X-To-Email': '{toEmail}'
+            
           - body format:
             name: string
             email: string
             subject: string
             message: string
-            toEmail: string
           
           - Add error and success handling:
             - On success: Show an alert with "Message sent successfully!"
@@ -109,8 +110,6 @@ export class LandingPageGenerator {
         <body>
             ... (page content) ...
             <script>
-              // Add this to your form submission handler
-              formData.toEmail = "{toEmail}";
             </script>
         </body>
         </html>
