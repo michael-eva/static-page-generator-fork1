@@ -5,6 +5,7 @@ import { LandingPageGenerator, BusinessInfo } from "../../services/generator";
 import { checkRateLimit } from "../../core/security";
 import { supabase } from "@/lib/supabase";
 import { PreviewService } from "@/app/services/preview";
+import { fetchTemplate } from "@/app/services/utils";
 
 const BusinessInfoSchema = z.object({
   userId: z.string(),
@@ -60,7 +61,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validatedData = BusinessInfoSchema.parse(body);
     const { userId } = validatedData;
-
+    const html = await fetchTemplate(validatedData.htmlSrc);
+    // console.log("htmlContent", htmlContent);
     // Generate site ID
     siteId = `${validatedData.name
       .toLowerCase()
@@ -70,16 +72,18 @@ export async function POST(request: Request) {
     // Pass siteId to generator
     const htmlContent = await generator.generate({
       ...validatedData,
+      htmlContent: html,
       images: validatedData.images.map((img) => ({
         url: img.url,
         description: img.description,
         metadata: img.metadata,
       })),
     });
+    console.log(siteId, validatedData.htmlSrc);
 
     // Deploy to S3
     const [deployment, previewUrl] = await Promise.all([
-      s3.deploy(siteId, htmlContent),
+      s3.deploy(siteId, htmlContent, validatedData.htmlSrc),
       previewService.generatePreview(htmlContent, siteId),
     ]);
     // Save to Supabase
@@ -100,7 +104,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       site_id: siteId,
       status: "completed",
-      preview_url: deployment.url,
+      // preview_url: deployment.url,
       dns_configuration: {
         type: "CNAME",
         name: siteId,

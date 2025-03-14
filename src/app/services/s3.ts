@@ -4,6 +4,12 @@ import {
   DeleteObjectCommand,
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
+import {
+  getParentDirectoryUrl,
+  getDirectoryFileList,
+  fetchDirectoryContents,
+  determineContentType,
+} from "./utils";
 
 export class S3Service {
   private s3: S3Client;
@@ -25,8 +31,9 @@ export class S3Service {
     });
   }
 
-  async deploy(siteId: string, htmlContent: string) {
+  async deploy(siteId: string, htmlContent: string, iframeSrc: string) {
     try {
+      // First, upload the main index.html
       await this.s3.send(
         new PutObjectCommand({
           Bucket: this.bucketName,
@@ -35,6 +42,39 @@ export class S3Service {
           ContentType: "text/html",
         })
       );
+
+      // Get directory and its contents
+      const baseUrl =
+        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+      const templatePath = iframeSrc.startsWith("/")
+        ? iframeSrc
+        : `/${iframeSrc}`;
+      const fullUrl = `${baseUrl}${templatePath}`;
+      const parentUrl = getParentDirectoryUrl(fullUrl);
+
+      // You'd need a server-side API or solution to provide this information
+      const fileList = await getDirectoryFileList(parentUrl);
+
+      // Fetch and upload all files
+      const files = await fetchDirectoryContents(parentUrl, fileList);
+
+      for (const file of files) {
+        // Skip uploading index.html from the template
+        if (file.path === "index.html") {
+          continue;
+        }
+
+        const contentType = determineContentType(file.path);
+
+        await this.s3.send(
+          new PutObjectCommand({
+            Bucket: this.bucketName,
+            Key: `${siteId}/${file.path}`,
+            Body: file.content,
+            ContentType: contentType,
+          })
+        );
+      }
 
       const url = `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${siteId}/index.html`;
       return { url, siteId };
