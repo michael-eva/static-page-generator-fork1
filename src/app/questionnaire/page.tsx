@@ -500,7 +500,7 @@ const BusinessForm = () => {
                                         }`}
                                 >
                                     <div className="flex space-x-2">
-                                        {Object.entries(palette.roles).map(([role, color], index) => (
+                                        {Object.entries(palette.roles).map(([role, color]) => (
                                             <div
                                                 key={role}
                                                 style={{ backgroundColor: color }}
