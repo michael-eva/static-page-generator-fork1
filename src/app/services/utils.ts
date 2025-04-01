@@ -27,6 +27,14 @@ export function getParentDirectoryUrl(url: string): string {
   return segments.join("/");
 }
 
+export async function fetchAssets(directoryUrl: string): Promise<string[]> {
+  const baseUrl = directoryUrl.endsWith("/")
+    ? directoryUrl
+    : `${directoryUrl}/`;
+  const response = await fetch(baseUrl);
+  return await response.json();
+}
+
 export async function fetchDirectoryContents(
   directoryUrl: string,
   fileList: string[]

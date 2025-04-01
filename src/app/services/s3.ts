@@ -3,6 +3,8 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
+  PutBucketPolicyCommand,
+  PutBucketCorsCommand
 } from "@aws-sdk/client-s3";
 import {
   getParentDirectoryUrl,
@@ -11,6 +13,12 @@ import {
   determineContentType,
 } from "./utils";
 
+export type DeploymentFile = {
+  name: string;
+  content: string | Buffer;
+  contentType?: string;
+};
+
 export class S3Service {
   private s3: S3Client;
   public bucketName: string;
@@ -18,9 +26,13 @@ export class S3Service {
   public websiteEndpoint: string;
 
   constructor() {
-    this.region = process.env.AWS_REGION || "us-east-1";
+    this.region = process.env.AWS_REGION || "us-east-2";
     this.bucketName = process.env.S3_BUCKET_NAME!;
     this.websiteEndpoint = `http://${this.bucketName}.s3-website.${this.region}.amazonaws.com`;
+
+    if (!this.bucketName) {
+      throw new Error("S3_BUCKET_NAME environment variable is required");
+    }
 
     this.s3 = new S3Client({
       region: this.region,
@@ -28,60 +40,79 @@ export class S3Service {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
       },
+      endpoint: `https://s3.${this.region}.amazonaws.com`,
+      forcePathStyle: false
     });
   }
 
-  async deploy(siteId: string, htmlContent: string, iframeSrc: string) {
-    try {
-      // First, upload the main index.html
-      await this.s3.send(
-        new PutObjectCommand({
-          Bucket: this.bucketName,
-          Key: `${siteId}/index.html`,
-          Body: htmlContent,
-          ContentType: "text/html",
-        })
-      );
-
-      // Get directory and its contents
-      const baseUrl =
-        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-      const templatePath = iframeSrc.startsWith("/")
-        ? iframeSrc
-        : `/${iframeSrc}`;
-      const fullUrl = `${baseUrl}${templatePath}`;
-      const parentUrl = getParentDirectoryUrl(fullUrl);
-
-      // You'd need a server-side API or solution to provide this information
-      const fileList = await getDirectoryFileList(parentUrl);
-
-      // Fetch and upload all files
-      const files = await fetchDirectoryContents(parentUrl, fileList);
-
-      for (const file of files) {
-        // Skip uploading index.html from the template
-        if (file.path === "index.html") {
-          continue;
+  private async ensurePublicAccess() {
+    // Set bucket policy
+    const bucketPolicy = {
+      Version: "2012-10-17",
+      Statement: [
+        {
+          Sid: "PublicReadGetObject",
+          Effect: "Allow",
+          Principal: "*",
+          Action: "s3:GetObject",
+          Resource: [
+            `arn:aws:s3:::${this.bucketName}`,
+            `arn:aws:s3:::${this.bucketName}/*`,
+            `arn:aws:s3:::${this.bucketName}/*/*`,
+            `arn:aws:s3:::${this.bucketName}/*/*/*`
+          ]
         }
+      ]
+    };
 
-        const contentType = determineContentType(file.path);
+    const corsConfiguration = {
+      CORSRules: [
+        {
+          AllowedOrigins: ["*"],
+          AllowedMethods: ["GET", "HEAD"],
+          AllowedHeaders: ["*"],
+          MaxAgeSeconds: 3000
+        }
+      ]
+    };
 
-        await this.s3.send(
-          new PutObjectCommand({
-            Bucket: this.bucketName,
-            Key: `${siteId}/${file.path}`,
-            Body: file.content,
-            ContentType: contentType,
-          })
-        );
-      }
+    try {
+      await this.s3.send(new PutBucketPolicyCommand({
+        Bucket: this.bucketName,
+        Policy: JSON.stringify(bucketPolicy)
+      }));
 
-      const url = `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${siteId}/index.html`;
-      return { url, siteId };
+      await this.s3.send(new PutBucketCorsCommand({
+        Bucket: this.bucketName,
+        CORSConfiguration: corsConfiguration
+      }));
     } catch (error) {
-      console.error("Deployment failed:", error);
-      throw new Error("Deployment failed");
+      console.error("Error setting bucket policy or CORS:", error);
+      throw error;
     }
+  }
+
+  async deploy(siteId: string, files: DeploymentFile[], templatePath: string): Promise<{ url: string }> {
+    await this.ensurePublicAccess();
+
+    const uploadPromises = files.map(file => {
+      const key = `${siteId}/${file.name}`;
+      
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: file.content,
+        ContentType: file.contentType || 'text/html'
+      });
+
+      return this.s3.send(command);
+    });
+
+    await Promise.all(uploadPromises);
+
+    return {
+      url: `${this.websiteEndpoint}/${siteId}/index.html`
+    };
   }
 
   async getDeploymentStatus(
@@ -142,14 +173,15 @@ export class S3Service {
         })
       );
 
-      // Use the same URL format as the index.html
-      const url = `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
+      // Use website endpoint format consistently
+      const url = `${this.websiteEndpoint}/${key}`;
       return { url, metadata };
     } catch (error) {
       console.error("S3 Upload Failed:", error);
       throw error;
     }
   }
+
   async uploadPreview(siteId: string, buffer: Buffer): Promise<string> {
     try {
       const key = `${siteId}/preview.png`;
@@ -167,7 +199,8 @@ export class S3Service {
         })
       );
 
-      const url = `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
+      // Use website endpoint format consistently
+      const url = `${this.websiteEndpoint}/${key}`;
       return url;
     } catch (error) {
       console.error("Preview upload failed:", error);

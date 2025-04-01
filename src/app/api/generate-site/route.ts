@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { S3Service } from "../../services/s3";
+import { S3Service, DeploymentFile } from "../../services/s3";
 import { LandingPageGenerator, BusinessInfo } from "../../services/generator";
 import { checkRateLimit } from "../../core/security";
 import { supabase } from "@/lib/supabase";
 import { PreviewService } from "@/app/services/preview";
 import { fetchTemplate } from "@/app/services/utils";
+import { fetchAssets } from "@/app/services/assetUtils";
+import path from 'path';
 
 const BusinessInfoSchema = z.object({
   userId: z.string(),
@@ -62,15 +64,14 @@ export async function POST(request: Request) {
     const validatedData = BusinessInfoSchema.parse(body);
     const { userId } = validatedData;
     const html = await fetchTemplate(validatedData.htmlSrc);
-    // console.log("htmlContent", htmlContent);
-    // Generate site ID
+    
     siteId = `${validatedData.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")}-${crypto.randomUUID().slice(0, 8)}`;
 
-    // Pass siteId to generator
-    const htmlContent = await generator.generate({
+    // Generate HTML files
+    const files = await generator.generate({
       ...validatedData,
       htmlContent: html,
       images: validatedData.images.map((img) => ({
@@ -79,13 +80,43 @@ export async function POST(request: Request) {
         metadata: img.metadata,
       })),
     });
-    console.log(siteId, validatedData.htmlSrc);
+
+    // Fetch assets from template
+    const templateName = validatedData.htmlSrc.split('/').find((part, index, array) => 
+      array[index - 1] === 'templates-new'
+    );
+    if (!templateName) {
+      throw new Error('Could not determine template name from htmlSrc');
+    }
+    const templatePath = path.join(process.cwd(), 'public/templates-new', templateName);
+    console.log('Template path:', templatePath);
+    console.log('Template name:', templateName);
+    const assets = await fetchAssets(templatePath);
+    console.log('Assets found:', assets.length);
+
+    // Combine HTML files and assets for deployment
+    const allFiles: DeploymentFile[] = [
+      ...files.map(f => ({
+        name: f.name,
+        content: f.content,
+        contentType: 'text/html'
+      })),
+      ...assets.map(asset => ({
+        name: asset.name,
+        content: asset.content,
+        contentType: asset.contentType
+      }))
+    ];
+    
+    console.log('Total files to deploy:', allFiles.length);
+    console.log('File names:', allFiles.map(f => f.name));
 
     // Deploy to S3
     const [deployment, previewUrl] = await Promise.all([
-      s3.deploy(siteId, htmlContent, validatedData.htmlSrc),
-      previewService.generatePreview(htmlContent, siteId),
+      s3.deploy(siteId, allFiles, validatedData.htmlSrc),
+      previewService.generatePreview(files.find(f => f.name === 'index.html')?.content || '', siteId),
     ]);
+
     // Save to Supabase
     const { error } = await supabase.from("websites").insert({
       site_id: siteId,
