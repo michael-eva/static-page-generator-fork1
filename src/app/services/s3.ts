@@ -3,6 +3,8 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
 import {
   getParentDirectoryUrl,
@@ -102,12 +104,25 @@ export class S3Service {
 
   async deleteSite(siteId: string) {
     try {
-      await this.s3.send(
-        new DeleteObjectCommand({
+      // First, list all objects with the siteId prefix
+      const listResponse = await this.s3.send(
+        new ListObjectsV2Command({
           Bucket: this.bucketName,
-          Key: `${siteId}/index.html`,
+          Prefix: `${siteId}/`,
         })
       );
+
+      if (listResponse.Contents && listResponse.Contents.length > 0) {
+        // Delete all objects found
+        await this.s3.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucketName,
+            Delete: {
+              Objects: listResponse.Contents.map(({ Key }) => ({ Key })),
+            },
+          })
+        );
+      }
     } catch (error) {
       console.error("Failed to delete site:", error);
       throw new Error("Failed to delete site");

@@ -4,7 +4,7 @@ import "./globals.css";
 import { SelectedCardProvider } from "@/context/SelectedCardContext";
 import Navbar from '@/components/Navbar'
 import Providers from './providers';
-
+import { Toaster } from "react-hot-toast";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -36,6 +36,7 @@ export default function RootLayout({
             {children}
           </SelectedCardProvider>
         </Providers>
+        <Toaster />
       </body>
     </html>
   );

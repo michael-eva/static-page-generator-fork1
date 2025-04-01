@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { User } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase/client/supabase'
 
 export default function Navbar() {
     const [user, setUser] = useState<User | null>(null)

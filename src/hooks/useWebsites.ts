@@ -1,7 +1,7 @@
 "use client";
 
+import { supabase } from "@/lib/supabase/client/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 
 export function useWebsites(userId: string) {
   return useQuery({

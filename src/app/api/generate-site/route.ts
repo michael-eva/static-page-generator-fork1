@@ -3,7 +3,7 @@ import { z } from "zod";
 import { S3Service } from "../../services/s3";
 import { LandingPageGenerator, BusinessInfo } from "../../services/generator";
 import { checkRateLimit } from "../../core/security";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/server/supsbase";
 import { PreviewService } from "@/app/services/preview";
 import { fetchTemplate } from "@/app/services/utils";
 
@@ -52,6 +52,18 @@ const s3 = new S3Service();
 const generator = new LandingPageGenerator();
 const previewService = new PreviewService(s3);
 
+async function checkUserProjectLimit(userId: string): Promise<boolean> {
+  const { data: projectCount } = await supabase
+    .from("websites")
+    .select("id", { count: "exact" })
+    .eq("user_id", userId);
+
+  // You can store this in an env variable or user's subscription plan
+  const PROJECT_LIMIT = Number(process.env.NEXT_PUBLIC_PROJECT_LIMIT);
+
+  return (projectCount?.length || 0) < PROJECT_LIMIT;
+}
+
 export async function POST(request: Request) {
   let siteId: string | undefined;
   try {
@@ -61,6 +73,16 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validatedData = BusinessInfoSchema.parse(body);
     const { userId } = validatedData;
+
+    // Check project limit before proceeding
+    const canCreateProject = await checkUserProjectLimit(userId);
+    if (!canCreateProject) {
+      return NextResponse.json(
+        { error: "Project limit reached. Please upgrade your plan." },
+        { status: 403 }
+      );
+    }
+
     const html = await fetchTemplate(validatedData.htmlSrc);
     // console.log("htmlContent", htmlContent);
     // Generate site ID
