@@ -78,7 +78,7 @@ export default function Dashboard({ params }: DashboardProps) {
                     </div>
                     {!projectLimits?.canCreateMore && (
                         <p className="mt-2 text-sm text-yellow-600">
-                            You've reached your project limit. Upgrade your plan to create more projects.
+                            You&apos;ve reached your project limit. Upgrade your plan to create more projects.
                         </p>
                     )}
                 </div>

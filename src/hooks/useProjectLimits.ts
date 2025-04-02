@@ -7,7 +7,7 @@ export function useProjectLimits(userId: string) {
   return useQuery({
     queryKey: ["projectLimits", userId],
     queryFn: async () => {
-      const { data: projects, count } = await supabase
+      const { count } = await supabase
         .from("websites")
         .select("id", { count: "exact" })
         .eq("user_id", userId);

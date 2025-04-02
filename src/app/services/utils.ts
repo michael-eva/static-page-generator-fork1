@@ -31,7 +31,7 @@ export async function fetchDirectoryContents(
   directoryUrl: string,
   fileList: string[]
 ): Promise<{ path: string; content: string | Buffer }[]> {
-  const results = [];
+  const results: { path: string; content: string | Buffer }[] = [];
   const baseUrl = directoryUrl.endsWith("/")
     ? directoryUrl
     : `${directoryUrl}/`;
