@@ -4,7 +4,7 @@ import {
   DeleteObjectCommand,
   HeadObjectCommand,
   PutBucketPolicyCommand,
-  PutBucketCorsCommand
+  PutBucketCorsCommand,
 } from "@aws-sdk/client-s3";
 import {
   getParentDirectoryUrl,
@@ -41,7 +41,7 @@ export class S3Service {
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
       },
       endpoint: `https://s3.${this.region}.amazonaws.com`,
-      forcePathStyle: false
+      forcePathStyle: false,
     });
   }
 
@@ -59,10 +59,10 @@ export class S3Service {
             `arn:aws:s3:::${this.bucketName}`,
             `arn:aws:s3:::${this.bucketName}/*`,
             `arn:aws:s3:::${this.bucketName}/*/*`,
-            `arn:aws:s3:::${this.bucketName}/*/*/*`
-          ]
-        }
-      ]
+            `arn:aws:s3:::${this.bucketName}/*/*/*`,
+          ],
+        },
+      ],
     };
 
     const corsConfiguration = {
@@ -71,38 +71,46 @@ export class S3Service {
           AllowedOrigins: ["*"],
           AllowedMethods: ["GET", "HEAD"],
           AllowedHeaders: ["*"],
-          MaxAgeSeconds: 3000
-        }
-      ]
+          MaxAgeSeconds: 3000,
+        },
+      ],
     };
 
     try {
-      await this.s3.send(new PutBucketPolicyCommand({
-        Bucket: this.bucketName,
-        Policy: JSON.stringify(bucketPolicy)
-      }));
+      await this.s3.send(
+        new PutBucketPolicyCommand({
+          Bucket: this.bucketName,
+          Policy: JSON.stringify(bucketPolicy),
+        })
+      );
 
-      await this.s3.send(new PutBucketCorsCommand({
-        Bucket: this.bucketName,
-        CORSConfiguration: corsConfiguration
-      }));
+      await this.s3.send(
+        new PutBucketCorsCommand({
+          Bucket: this.bucketName,
+          CORSConfiguration: corsConfiguration,
+        })
+      );
     } catch (error) {
       console.error("Error setting bucket policy or CORS:", error);
       throw error;
     }
   }
 
-  async deploy(siteId: string, files: DeploymentFile[], templatePath: string): Promise<{ url: string }> {
+  async deploy(
+    siteId: string,
+    files: DeploymentFile[],
+    templatePath: string
+  ): Promise<{ url: string }> {
     await this.ensurePublicAccess();
 
-    const uploadPromises = files.map(file => {
+    const uploadPromises = files.map((file) => {
       const key = `${siteId}/${file.name}`;
-      
+
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: key,
         Body: file.content,
-        ContentType: file.contentType || 'text/html'
+        ContentType: file.contentType || "text/html",
       });
 
       return this.s3.send(command);
@@ -111,7 +119,7 @@ export class S3Service {
     await Promise.all(uploadPromises);
 
     return {
-      url: `${this.websiteEndpoint}/${siteId}/index.html`
+      url: `${this.websiteEndpoint}/${siteId}/index.html`,
     };
   }
 
@@ -133,12 +141,25 @@ export class S3Service {
 
   async deleteSite(siteId: string) {
     try {
-      await this.s3.send(
-        new DeleteObjectCommand({
+      // First, list all objects with the siteId prefix
+      const listResponse = await this.s3.send(
+        new ListObjectsV2Command({
           Bucket: this.bucketName,
-          Key: `${siteId}/index.html`,
+          Prefix: `${siteId}/`,
         })
       );
+
+      if (listResponse.Contents && listResponse.Contents.length > 0) {
+        // Delete all objects found
+        await this.s3.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucketName,
+            Delete: {
+              Objects: listResponse.Contents.map(({ Key }) => ({ Key })),
+            },
+          })
+        );
+      }
     } catch (error) {
       console.error("Failed to delete site:", error);
       throw new Error("Failed to delete site");
