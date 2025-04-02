@@ -5,11 +5,13 @@ import { useSelectedCard } from '@/context/SelectedCardContext';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { templates } from '@/data/templates';
+import colorPalettes from '@/data/color-palettes.json'
 
 const CardComponent = () => {
     const router = useRouter();
     const websites = templates;
     const { selectedCard, setSelectedCard } = useSelectedCard();
+
     // Initialize with null and update from localStorage in useEffect
     useEffect(() => {
         const savedCard = typeof window !== 'undefined' ? localStorage.getItem('selectedCard') : null;
@@ -17,13 +19,24 @@ const CardComponent = () => {
             setSelectedCard(JSON.parse(savedCard));
         }
     }, [setSelectedCard]);
-
     const handleClick = (index: number) => {
+        const fetchedColorPalettes = colorPalettes[index];
         const newCard = {
             index,
             src: websites[index].src,
             name: websites[index].name,
-            colorPalette: websites[index].colorPalette,
+            colorPalette: {
+                name: fetchedColorPalettes.name,
+                theme: fetchedColorPalettes.theme,
+                roles: {
+                    background: fetchedColorPalettes.roles.background,
+                    surface: fetchedColorPalettes.roles.surface,
+                    text: fetchedColorPalettes.roles.text,
+                    textSecondary: fetchedColorPalettes.roles.textSecondary,
+                    primary: fetchedColorPalettes.roles.primary,
+                    accent: fetchedColorPalettes.roles.accent,
+                },
+            },
             iframeSrc: websites[index].iframeSrc,
             description: websites[index].description || '',
             offering: websites[index].offering || [],

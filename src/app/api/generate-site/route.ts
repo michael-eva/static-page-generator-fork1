@@ -1,68 +1,19 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
-import { S3Service } from "../../services/s3";
-import { LandingPageGenerator, BusinessInfo } from "../../services/generator";
+import { S3Service, DeploymentFile } from "../../services/s3";
+import { LandingPageGenerator } from "../../services/generator";
 import { checkRateLimit } from "../../core/security";
 import { supabase } from "@/lib/supabase/server/supsbase";
 import { PreviewService } from "@/app/services/preview";
 import { fetchTemplate } from "@/app/services/utils";
-
-const BusinessInfoSchema = z.object({
-  userId: z.string(),
-  name: z.string(),
-  htmlSrc: z.string(),
-  description: z.string(),
-  offerings: z.array(z.string()),
-  location: z.string(),
-  images: z.array(
-    z.object({
-      url: z.string(),
-      description: z.string(),
-      metadata: z.object({
-        width: z.number(),
-        height: z.number(),
-        aspectRatio: z.number(),
-      }),
-    })
-  ),
-  design_preferences: z.object({
-    style: z.string().optional(),
-    color_palette: z.string().optional(),
-  }),
-  contact_preferences: z.object({
-    type: z.enum(["form", "email", "phone", "subscribe", ""]),
-    business_hours: z.string(),
-    contact_email: z.string(),
-    contact_phone: z.string(),
-  }),
-  branding: z.object({
-    logo_url: z.string().optional(),
-    logo_metadata: z
-      .object({
-        width: z.number(),
-        height: z.number(),
-        aspectRatio: z.number(),
-      })
-      .optional(),
-    tagline: z.string().optional(),
-  }),
-}) satisfies z.ZodType<BusinessInfo>;
+import { fetchAssets } from "@/app/services/assetUtils";
+import { createCustomColorStylesheet } from "@/app/services/color-stylesheet-generator";
+import path from "path";
+import { BusinessInfoSchema } from "@/types/business";
+import { checkUserProjectLimit } from "./helper";
 
 const s3 = new S3Service();
 const generator = new LandingPageGenerator();
 const previewService = new PreviewService(s3);
-
-async function checkUserProjectLimit(userId: string): Promise<boolean> {
-  const { data: projectCount } = await supabase
-    .from("websites")
-    .select("id", { count: "exact" })
-    .eq("user_id", userId);
-
-  // You can store this in an env variable or user's subscription plan
-  const PROJECT_LIMIT = Number(process.env.NEXT_PUBLIC_PROJECT_LIMIT);
-
-  return (projectCount?.length || 0) < PROJECT_LIMIT;
-}
 
 export async function POST(request: Request) {
   let siteId: string | undefined;
@@ -82,17 +33,17 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
-
+    // #1: Fetch the template
     const html = await fetchTemplate(validatedData.htmlSrc);
-    // console.log("htmlContent", htmlContent);
-    // Generate site ID
+    console.log("HTML:", html);
+    // we need to fetch all the css as js files from the template too
     siteId = `${validatedData.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")}-${crypto.randomUUID().slice(0, 8)}`;
 
-    // Pass siteId to generator
-    const htmlContent = await generator.generate({
+    // #2: Generate HTML files
+    const files = await generator.generate({
       ...validatedData,
       htmlContent: html,
       images: validatedData.images.map((img) => ({
@@ -101,13 +52,97 @@ export async function POST(request: Request) {
         metadata: img.metadata,
       })),
     });
-    console.log(siteId, validatedData.htmlSrc);
+    console.log("Generated files:", files);
+
+    // #3: Fetch assets from template
+    const templateName = validatedData.htmlSrc
+      .split("/")
+      .find((part, index, array) => array[index - 1] === "templates-new");
+    if (!templateName) {
+      throw new Error("Could not determine template name from htmlSrc");
+    }
+    const templatePath = path.join(
+      process.cwd(),
+      "public/templates-new",
+      templateName
+    );
+    console.log("Template path:", templatePath);
+    console.log("Template name:", templateName);
+    const assets = await fetchAssets(templatePath);
+    console.log("Assets found:", assets.length);
+
+    // Log some CSS assets to help with debugging
+    const cssAssets = assets.filter((asset) => asset.name.endsWith(".css"));
+    console.log(
+      `Found ${cssAssets.length} CSS files: ${cssAssets
+        .map((a) => a.name)
+        .join(", ")}`
+    );
+
+    // Process CSS files to replace colors based on user preferences
+    // Import the CSS modifier utility
+    const { processAssetFiles } = await import("@/app/services/cssModifier");
+
+    // Step 1: Process existing CSS files with our modifier
+    const processedCssAssets = processAssetFiles(assets, validatedData);
+
+    // Step 2: Generate a custom color stylesheet that will override template defaults
+    const customColorStylesheet = createCustomColorStylesheet(validatedData);
+    console.log(
+      "Generated custom color stylesheet with high-specificity selectors"
+    );
+
+    // Step 3: Combine all assets with our custom stylesheet added last (to override others)
+    const allProcessedAssets = [
+      ...processedCssAssets, // Process original assets (including CSS)
+      customColorStylesheet, // Add our custom colors stylesheet (will override defaults)
+    ];
+
+    // Log CSS changes for debugging
+    console.log(
+      `Processed ${processedCssAssets.length} CSS files with user design preferences`
+    );
+    console.log(`Final asset count: ${allProcessedAssets.length} files`);
+    if (validatedData.design_preferences?.color_palette?.roles) {
+      console.log(
+        "Applied color roles:",
+        JSON.stringify(
+          validatedData.design_preferences.color_palette.roles,
+          null,
+          2
+        )
+      );
+    }
+
+    // Combine HTML files and assets for deployment
+    const allFiles: DeploymentFile[] = [
+      ...files.map((f) => ({
+        name: f.name,
+        content: f.content,
+        contentType: "text/html",
+      })),
+      ...allProcessedAssets.map((asset) => ({
+        name: asset.name,
+        content: asset.content,
+        contentType: asset.contentType,
+      })),
+    ];
+
+    console.log("Total files to deploy:", allFiles.length);
+    console.log(
+      "File names:",
+      allFiles.map((f) => f.name)
+    );
 
     // Deploy to S3
     const [deployment, previewUrl] = await Promise.all([
-      s3.deploy(siteId, htmlContent, validatedData.htmlSrc),
-      previewService.generatePreview(htmlContent, siteId),
+      s3.deploy(siteId, allFiles),
+      previewService.generatePreview(
+        files.find((f) => f.name === "index.html")?.content || "",
+        siteId
+      ),
     ]);
+
     // Save to Supabase
     const { error } = await supabase.from("websites").insert({
       site_id: siteId,
@@ -126,7 +161,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       site_id: siteId,
       status: "completed",
-      // preview_url: deployment.url,
+      preview_url: deployment.url,
       dns_configuration: {
         type: "CNAME",
         name: siteId,
