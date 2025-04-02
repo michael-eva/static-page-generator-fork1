@@ -245,8 +245,19 @@ export function WebsiteBuilderContent({
                   {colorPalettes.map((palette: any) => (
                     <div
                       key={palette.name}
-                      onClick={() => form.setValue('business_info.design_preferences.color_palette', palette.name)}
-                      className={`cursor-pointer border rounded-md p-3 hover:border-primary ${form.watch('business_info.design_preferences.color_palette') === palette.name
+                      onClick={() => form.setValue('business_info.design_preferences.color_palette', {
+                        name: palette.name,
+                        theme: palette.theme,
+                        roles: {
+                          background: palette.roles.background,
+                          surface: palette.roles.surface,
+                          text: palette.roles.text,
+                          textSecondary: palette.roles.textSecondary,
+                          primary: palette.roles.primary,
+                          accent: palette.roles.accent,
+                        }
+                      })}
+                      className={`cursor-pointer border rounded-md p-3 hover:border-primary ${form.watch('business_info.design_preferences.color_palette.name') === palette.name
                         ? "border-primary bg-primary/10"
                         : ""
                         }`}

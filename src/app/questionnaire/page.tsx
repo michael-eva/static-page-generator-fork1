@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { BusinessInfoSchema } from "@/types/business";
+import { useSupabaseSession } from '@/hooks/useSupabaseSession'
 
 type ContactType = 'form' | 'email' | 'phone' | 'subscribe' | '';
 
@@ -32,7 +33,18 @@ interface FormData {
         }[];
         design_preferences: {
             style: string | undefined;
-            color_palette: string | undefined;
+            color_palette: {
+                name: string;
+                theme: string;
+                roles: {
+                    background: string;
+                    surface: string;
+                    text: string;
+                    textSecondary: string;
+                    primary: string;
+                    accent: string;
+                };
+            };
         };
         contact_preferences: {
             type: ContactType;
@@ -52,6 +64,7 @@ interface FormData {
                 uploadedAt: string;
             } | null;
             tagline: string | undefined;
+            siteId: string;
         };
     };
 }
@@ -71,7 +84,18 @@ const getInitialFormData = (useSelectedCard: boolean, selectedCard: any): FormDa
             images: [{ path: '', description: '' }],
             design_preferences: {
                 style: '',
-                color_palette: ''
+                color_palette: {
+                    name: '',
+                    theme: '',
+                    roles: {
+                        background: '',
+                        surface: '',
+                        text: '',
+                        textSecondary: '',
+                        primary: '',
+                        accent: ''
+                    }
+                }
             },
             contact_preferences: {
                 type: '',
@@ -82,7 +106,8 @@ const getInitialFormData = (useSelectedCard: boolean, selectedCard: any): FormDa
             branding: {
                 logo_url: '',
                 logo_file: null,
-                tagline: ''
+                tagline: '',
+                siteId: ''
             }
         }
     };
@@ -99,7 +124,18 @@ const getInitialFormData = (useSelectedCard: boolean, selectedCard: any): FormDa
             images: selectedCard?.images ?? [{ path: '', description: '' }],
             design_preferences: {
                 style: selectedCard?.style ?? '',
-                color_palette: selectedCard?.colorPalette ?? ''
+                color_palette: selectedCard?.colorPalette ?? {
+                    name: '',
+                    theme: '',
+                    roles: {
+                        background: '',
+                        surface: '',
+                        text: '',
+                        textSecondary: '',
+                        primary: '',
+                        accent: ''
+                    }
+                }
             },
             contact_preferences: {
                 type: '',
@@ -110,7 +146,8 @@ const getInitialFormData = (useSelectedCard: boolean, selectedCard: any): FormDa
             branding: {
                 logo_url: selectedCard?.logoUrl ?? '',
                 logo_file: null,
-                tagline: selectedCard?.tagline ?? ''
+                tagline: selectedCard?.tagline ?? '',
+                siteId: ''
             }
         }
     };
@@ -127,7 +164,8 @@ const formSchema = z.object({
             logo_url: z.string(),
             default_logo_url: z.string().optional(),
             logo_file: z.any().optional().nullable(),
-            tagline: z.string()
+            tagline: z.string(),
+            siteId: z.string()
         }),
         contact_preferences: z.object({
             type: z.enum(["form", "email", "phone", "subscribe", ""]),
@@ -148,16 +186,7 @@ export type TabValue = typeof TABS[number];
 export default function WebsiteBuilderForm() {
     const { selectedCard, isLoading } = useSelectedCard();
     const { isOpen, close, toggle } = useDialog();
-    const [session, setSession] = useState<Session | null>(null);
-    const userId = session?.user?.id;
-
-    useEffect(() => {
-        const getSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setSession(session);
-        };
-        getSession();
-    }, []);
+    const { session, userId } = useSupabaseSession();
 
     const defaultFormData = getInitialFormData(USE_SELECTED_CARD, selectedCard);
 
@@ -280,6 +309,8 @@ export default function WebsiteBuilderForm() {
 
     // Handle form submission
     const onSubmit = async (data: FormSchema) => {
+        console.log(data);
+
         try {
             if (!session) {
                 window.location.href = '/auth/sign-in?returnUrl=questionnaire';

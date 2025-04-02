@@ -20,7 +20,18 @@ export const BusinessInfoSchema = z.object({
   ),
   design_preferences: z.object({
     style: z.string().optional(),
-    color_palette: z.string().optional(),
+    color_palette: z.object({
+      name: z.string(),
+      theme: z.string(),
+      roles: z.object({
+        background: z.string().optional(),
+        surface: z.string().optional(),
+        text: z.string().optional(),
+        textSecondary: z.string().optional(),
+        primary: z.string().optional(),
+        accent: z.string().optional(),
+      }),
+    }),
   }),
   contact_preferences: z.object({
     type: z.enum(["form", "email", "phone", "subscribe", ""]),
@@ -49,6 +60,7 @@ export const BusinessInfoSchema = z.object({
       })
       .optional(),
     tagline: z.string().optional(),
+    // siteId: z.string(),
   }),
 });
 

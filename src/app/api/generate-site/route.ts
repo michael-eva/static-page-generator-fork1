@@ -8,22 +8,11 @@ import { fetchTemplate } from "@/app/services/utils";
 import { fetchAssets } from "@/app/services/assetUtils";
 import path from "path";
 import { BusinessInfoSchema } from "@/types/business";
+import { checkUserProjectLimit } from "./helper";
 
 const s3 = new S3Service();
 const generator = new LandingPageGenerator();
 const previewService = new PreviewService(s3);
-
-async function checkUserProjectLimit(userId: string): Promise<boolean> {
-  const { data: projectCount } = await supabase
-    .from("websites")
-    .select("id", { count: "exact" })
-    .eq("user_id", userId);
-
-  // You can store this in an env variable or user's subscription plan
-  const PROJECT_LIMIT = Number(process.env.NEXT_PUBLIC_PROJECT_LIMIT);
-
-  return (projectCount?.length || 0) < PROJECT_LIMIT;
-}
 
 export async function POST(request: Request) {
   let siteId: string | undefined;
@@ -126,7 +115,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       site_id: siteId,
       status: "completed",
-      // preview_url: deployment.url,
+      preview_url: deployment.url,
       dns_configuration: {
         type: "CNAME",
         name: siteId,

@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client/supabase";
 
-export function useProjectLimits(userId: string) {
+export function useProjectLimits(userId: string | undefined) {
   return useQuery({
     queryKey: ["projectLimits", userId],
     queryFn: async () => {
@@ -21,6 +21,7 @@ export function useProjectLimits(userId: string) {
         canCreateMore: (count || 0) < PROJECT_LIMIT,
       };
     },
+    enabled: !!userId,
     staleTime: 1000 * 60 * 5,
   });
 }

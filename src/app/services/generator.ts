@@ -4,8 +4,8 @@ import colorPalettes from "@/data/color-palettes.json";
 import { z } from "zod";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 export type ImageWithMetadata = {
   url: string;
@@ -28,7 +28,18 @@ export type BusinessInfo = {
   images: ImageWithMetadata[];
   design_preferences: {
     style?: string;
-    color_palette?: string;
+    color_palette?: {
+      name: string;
+      theme: string;
+      roles: {
+        background?: string;
+        surface?: string;
+        text?: string;
+        textSecondary?: string;
+        primary?: string;
+        accent?: string;
+      };
+    };
   };
   contact_preferences: {
     type: "form" | "email" | "phone" | "subscribe" | "";
@@ -53,7 +64,7 @@ const GeneratedFile = z.object({
 });
 
 const GeneratedFiles = z.object({
-  files: z.array(GeneratedFile)
+  files: z.array(GeneratedFile),
 });
 
 export class LandingPageGenerator {
@@ -71,29 +82,33 @@ export class LandingPageGenerator {
   private getTemplateNameFromUrl(url: string): string {
     try {
       // Handle both URL and path formats
-      const parts = url.includes('://') 
-        ? new URL(url).pathname.split('/') 
-        : url.split('/');
-      
+      const parts = url.includes("://")
+        ? new URL(url).pathname.split("/")
+        : url.split("/");
+
       // Find the index of 'templates-new' and get the next part
-      const templateNewIndex = parts.findIndex(part => part === 'templates-new');
+      const templateNewIndex = parts.findIndex(
+        (part) => part === "templates-new"
+      );
       if (templateNewIndex !== -1 && parts[templateNewIndex + 1]) {
         return parts[templateNewIndex + 1];
       }
-      throw new Error('Invalid template URL format');
+      throw new Error("Invalid template URL format");
     } catch (error: any) {
       throw new Error(`Failed to parse template URL: ${error.message}`);
     }
   }
 
-  private async readHtmlFiles(templatePath: string): Promise<Array<{ name: string; content: string }>> {
+  private async readHtmlFiles(
+    templatePath: string
+  ): Promise<Array<{ name: string; content: string }>> {
     try {
       const files = fs.readdirSync(templatePath);
-      const htmlFiles = files.filter(file => file.endsWith('.html'));
-      
-      return htmlFiles.map(file => ({
+      const htmlFiles = files.filter((file) => file.endsWith(".html"));
+
+      return htmlFiles.map((file) => ({
         name: file,
-        content: fs.readFileSync(path.join(templatePath, file), 'utf8')
+        content: fs.readFileSync(path.join(templatePath, file), "utf8"),
       }));
     } catch (error: any) {
       console.error(`Error reading HTML files from ${templatePath}:`, error);
@@ -101,10 +116,17 @@ export class LandingPageGenerator {
     }
   }
 
-  async generate(businessInfo: BusinessInfo): Promise<Array<{ name: string; content: string }>> {
+  async generate(
+    businessInfo: BusinessInfo
+  ): Promise<Array<{ name: string; content: string }>> {
     // Extract template name from URL and build path
     const templateName = this.getTemplateNameFromUrl(businessInfo.htmlSrc);
-    const templatePath = path.join(process.cwd(), 'public', 'templates-new', templateName);
+    const templatePath = path.join(
+      process.cwd(),
+      "public",
+      "templates-new",
+      templateName
+    );
 
     if (!fs.existsSync(templatePath)) {
       throw new Error(`Template directory not found: ${templatePath}`);
@@ -114,7 +136,10 @@ export class LandingPageGenerator {
 
     // Format business information for the prompt
     const formattedImages = businessInfo.images
-      .map(img => `${img.url} - ${img.description} (${img.metadata.width}x${img.metadata.height})`)
+      .map(
+        (img) =>
+          `${img.url} - ${img.description} (${img.metadata.width}x${img.metadata.height})`
+      )
       .join("\n");
 
     const formattedOfferings = businessInfo.offerings.join("\n");
@@ -137,7 +162,7 @@ Make sure to:
 - Maintain responsive design and accessibility
 - Preserve the template's structure while customizing it for the business
 
-Return an object with a 'files' array containing the customized HTML file.`
+Return an object with a 'files' array containing the customized HTML file.`,
           },
           {
             role: "user",
@@ -152,10 +177,10 @@ Location: ${businessInfo.location}
 Images: ${formattedImages}
 Design Preferences: ${JSON.stringify(businessInfo.design_preferences)}
 Contact Preferences: ${JSON.stringify(businessInfo.contact_preferences)}
-Branding: ${JSON.stringify(businessInfo.branding)}`
-          }
+Branding: ${JSON.stringify(businessInfo.branding)}`,
+          },
         ],
-        response_format: zodResponseFormat(GeneratedFiles, "json")
+        response_format: zodResponseFormat(GeneratedFiles, "json"),
       });
 
       const generatedFile = completion.choices[0].message.parsed?.files[0];

@@ -84,6 +84,7 @@ export function FormProgressTracker({ form, currentTab, setCurrentTab }: FormPro
 
       <div className="flex items-center justify-between sm:hidden">
         <button
+          type="button"
           onClick={() => {
             const currentIndex = tabs.findIndex(t => t.id === currentTab);
             if (currentIndex > 0) {
@@ -101,6 +102,7 @@ export function FormProgressTracker({ form, currentTab, setCurrentTab }: FormPro
         </div>
 
         <button
+          type="button"
           onClick={() => {
             const currentIndex = tabs.findIndex(t => t.id === currentTab);
             if (currentIndex < tabs.length - 1) {
@@ -133,6 +135,7 @@ export function FormProgressTracker({ form, currentTab, setCurrentTab }: FormPro
           return (
             <React.Fragment key={tab.id}>
               <button
+                type="button"
                 onClick={() => setCurrentTab(tab.id)}
                 className="flex flex-col items-center group"
               >

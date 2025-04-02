@@ -3,7 +3,18 @@ export interface Template {
   src: string; // Path to thumbnail image
   name: string; // Display name
   iframeSrc: string; // Path to template HTML file
-  colorPalette: string;
+  colorPalette: {
+    name: string;
+    theme: string;
+    roles: {
+      background?: string;
+      surface?: string;
+      text?: string;
+      textSecondary?: string;
+      primary?: string;
+      accent?: string;
+    };
+  };
   description?: string; // Optional detailed description
   offering?: string[]; // Optional array of offerings
   images?: {
