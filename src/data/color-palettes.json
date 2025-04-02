@@ -1,124 +1,114 @@
 [
-    {
-      "name": "Midnight",
-      "theme": "dark",
-      "roles": {
-        "background": "#1B1B1B",
-        "surface": "#2C3E50",
-        "text": "#ECF0F1",
-        "textSecondary": "#95A5A6",
-        "primary": "#34495E"
-      }
-    },
-    {
-      "name": "Light",
-      "theme": "light",
-      "roles": {
-        "background": "#dad7cd",
-        "surface": "#f5f5f5",
-        "text": "#344e41",
-        "textSecondary": "#588157",
-        "primary": "#3a5a40",
-        "accent": "#a3b18a"
-      }
-    },
-    {
-      "name": "Ocean",
-      "theme": "light",
-      "roles": {
-        "background": "#F1F1F1",
-        "surface": "#B1D4E0",
-        "text": "#0C2D48",
-        "primary": "#2E8BC0",
-        "secondary": "#145DA0"
-      }
-    },
-    {
-      "name": "Sunset",
-      "theme": "light",
-      "roles": {
-        "background": "#FEB47B",
-        "surface": "#FF7E5F",
-        "text": "#3E1F47",
-        "primary": "#D7263D",
-        "accent": "#FF6F61"
-      }
-    },
-    {
-      "name": "Forest",
-      "theme": "light",
-      "roles": {
-        "background": "#F3E9D2",
-        "surface": "#D9BF77",
-        "text": "#2C5F2D",
-        "primary": "#97BC62",
-        "accent": "#A1C349"
-      }
-    },
-    {
-      "name": "Modern",
-      "theme": "light",
-      "roles": {
-        "background": "#F5F5F7",
-        "text": "#333333",
-        "primary": "#007AFF",
-        "secondary": "#5856D6",
-        "accent": "#FF2D55"
-      }
-    },
-    {
-      "name": "Retro",
-      "theme": "light",
-      "roles": {
-        "background": "#F8B195",
-        "surface": "#F67280",
-        "text": "#355C7D",
-        "primary": "#6C5B7B",
-        "accent": "#C06C84"
-      }
-    },
-    {
-      "name": "Vibrant Web",
-      "theme": "light",
-      "roles": {
-        "background": "#EAE9FE",
-        "surface": "#F1F1F4",
-        "text": "#0D0D17",
-        "textSecondary": "#45454F",
-        "primary": "#4322B7",
-        "accent": "#0099FF"
-      }
-    },
-    {
-      "name": "Chill Vibes",
-      "theme": "light",
-      "roles": {
-        "background": "#f4ece8",
-        "text": "#000000",
-        "textSecondary": "#45454f",
-        "primary": "#4d65ff",
-        "accent": "#c06522"
-      }
-    },
-    {
-      "name": "Modern Elegance",
-      "theme": "dark",
-      "roles": {
-        "background": "#09090a",
-        "surface": "#000000",
-        "text": "#ffffff",
-        "textSecondary": "#f1f1f4",
-        "accent": "#0099ff"
-      }
-    },
-    {
-      "name": "Elegant Contrast",
-      "theme": "light",
-      "roles": {
-        "background": "#FFFFFF",
-        "surface": "#D2B48C",
-        "text": "#000000",
-        "textSecondary": "#333333"
-      }
+  {
+    "name": "Forest Premium",
+    "theme": "light",
+    "roles": {
+      "background": "#FFFFFF",
+      "surface": "#F0F9F1",
+      "text": "#1E3A29",
+      "textSecondary": "#3F6747",
+      "primary": "#2D6A4F",
+      "accent": "#40916C",
+      "highlight": "#95D5B2",
+      "border": "#D8F3DC"
     }
+  },
+  {
+    "name": "Executive Suite",
+    "theme": "light",
+    "roles": {
+      "background": "#FFFFFF",
+      "surface": "#F8F9FA",
+      "text": "#212529",
+      "textSecondary": "#495057",
+      "primary": "#343A40",
+      "accent": "#6C757D",
+      "highlight": "#E9ECEF",
+      "border": "#DEE2E6"
+    }
+  },
+  {
+    "name": "Sky Blue",
+    "theme": "light",
+    "roles": {
+      "background": "#FFFFFF",
+      "surface": "#F0F8FF",
+      "text": "#0B3954",
+      "textSecondary": "#087E8B",
+      "primary": "#0D6EFD",
+      "accent": "#48CAE4",
+      "highlight": "#CAF0F8",
+      "border": "#E5E5E5"
+    }
+  },
+  {
+    "name": "Professional Purple",
+    "theme": "light",
+    "roles": {
+      "background": "#FFFFFF",
+      "surface": "#F8F7FD",
+      "text": "#2D1B40",
+      "textSecondary": "#5E3B76",
+      "primary": "#6D28D9",
+      "accent": "#8B5CF6",
+      "highlight": "#DDD6FE",
+      "border": "#EDE9FE"
+    }
+  },
+  {
+    "name": "Corporate Green",
+    "theme": "light",
+    "roles": {
+      "background": "#FFFFFF",
+      "surface": "#F9FBFA",
+      "text": "#0C1E0E",
+      "textSecondary": "#285430",
+      "primary": "#157347",
+      "accent": "#5F8D4E",
+      "highlight": "#E2F4E3",
+      "border": "#DEE2E6"
+    }
+  },
+  {
+    "name": "Soft Minimalist",
+    "theme": "light",
+    "roles": {
+      "background": "#FFFFFF",
+      "surface": "#FCFCFC",
+      "text": "#2C3E50",
+      "textSecondary": "#7F8C8D",
+      "primary": "#95A5A6",
+      "accent": "#BDC3C7",
+      "highlight": "#ECEFF1",
+      "border": "#E0E0E0"
+    }
+  },
+  {
+    "name": "Digital Blue",
+    "theme": "dark",
+    "roles": {
+      "background": "#0A1929",
+      "surface": "#132F4C",
+      "text": "#FFFFFF",
+      "textSecondary": "#B2BAC2",
+      "primary": "#3399FF",
+      "accent": "#5EEAD4",
+      "highlight": "#173A5E",
+      "border": "#1E4976"
+    }
+  },
+  {
+    "name": "Carbon",
+    "theme": "dark",
+    "roles": {
+      "background": "#161616",
+      "surface": "#262626",
+      "text": "#F4F4F4",
+      "textSecondary": "#C6C6C6",
+      "primary": "#0F62FE",
+      "accent": "#33B1FF",
+      "highlight": "#393939",
+      "border": "#525252"
+    }
+  }
 ]

@@ -1,6 +1,4 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import colorPalettes from "@/data/color-palettes.json";
 import { z } from "zod";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";

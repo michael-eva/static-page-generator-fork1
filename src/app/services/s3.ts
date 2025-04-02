@@ -5,13 +5,9 @@ import {
   HeadObjectCommand,
   PutBucketPolicyCommand,
   PutBucketCorsCommand,
+  DeleteObjectsCommand,
+  ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
-import {
-  getParentDirectoryUrl,
-  getDirectoryFileList,
-  fetchDirectoryContents,
-  determineContentType,
-} from "./utils";
 
 export type DeploymentFile = {
   name: string;
@@ -98,8 +94,7 @@ export class S3Service {
 
   async deploy(
     siteId: string,
-    files: DeploymentFile[],
-    templatePath: string
+    files: DeploymentFile[]
   ): Promise<{ url: string }> {
     await this.ensurePublicAccess();
 

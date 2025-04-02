@@ -7,8 +7,6 @@ import { useSelectedCard } from '@/context/SelectedCardContext'
 import { generateSiteId } from '../utils/siteId'
 import { useDialog } from '../../hooks/use-dialog'
 import { CustomDialog } from '@/components/dialog'
-import { supabase } from '@/lib/supabase/client/supabase'
-import { Session } from '@supabase/supabase-js'
 import { WebsiteBuilderContent } from './components/WebsiteBuilderContent'
 import { FormProgressTracker } from './components/FormProgressTracker'
 import { useForm } from "react-hook-form";
