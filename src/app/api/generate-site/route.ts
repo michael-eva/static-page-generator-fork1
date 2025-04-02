@@ -1,54 +1,13 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { S3Service, DeploymentFile } from "../../services/s3";
-import { LandingPageGenerator, BusinessInfo } from "../../services/generator";
+import { LandingPageGenerator } from "../../services/generator";
 import { checkRateLimit } from "../../core/security";
 import { supabase } from "@/lib/supabase/server/supsbase";
 import { PreviewService } from "@/app/services/preview";
 import { fetchTemplate } from "@/app/services/utils";
 import { fetchAssets } from "@/app/services/assetUtils";
-import path from 'path';
-
-const BusinessInfoSchema = z.object({
-  userId: z.string(),
-  name: z.string(),
-  htmlSrc: z.string(),
-  description: z.string(),
-  offerings: z.array(z.string()),
-  location: z.string(),
-  images: z.array(
-    z.object({
-      url: z.string(),
-      description: z.string(),
-      metadata: z.object({
-        width: z.number(),
-        height: z.number(),
-        aspectRatio: z.number(),
-      }),
-    })
-  ),
-  design_preferences: z.object({
-    style: z.string().optional(),
-    color_palette: z.string().optional(),
-  }),
-  contact_preferences: z.object({
-    type: z.enum(["form", "email", "phone", "subscribe", ""]),
-    business_hours: z.string(),
-    contact_email: z.string(),
-    contact_phone: z.string(),
-  }),
-  branding: z.object({
-    logo_url: z.string().optional(),
-    logo_metadata: z
-      .object({
-        width: z.number(),
-        height: z.number(),
-        aspectRatio: z.number(),
-      })
-      .optional(),
-    tagline: z.string().optional(),
-  }),
-}) satisfies z.ZodType<BusinessInfo>;
+import path from "path";
+import { BusinessInfoSchema } from "@/types/business";
 
 const s3 = new S3Service();
 const generator = new LandingPageGenerator();
@@ -86,7 +45,7 @@ export async function POST(request: Request) {
     }
 
     const html = await fetchTemplate(validatedData.htmlSrc);
-    
+
     siteId = `${validatedData.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -104,39 +63,49 @@ export async function POST(request: Request) {
     });
 
     // Fetch assets from template
-    const templateName = validatedData.htmlSrc.split('/').find((part, index, array) => 
-      array[index - 1] === 'templates-new'
-    );
+    const templateName = validatedData.htmlSrc
+      .split("/")
+      .find((part, index, array) => array[index - 1] === "templates-new");
     if (!templateName) {
-      throw new Error('Could not determine template name from htmlSrc');
+      throw new Error("Could not determine template name from htmlSrc");
     }
-    const templatePath = path.join(process.cwd(), 'public/templates-new', templateName);
-    console.log('Template path:', templatePath);
-    console.log('Template name:', templateName);
+    const templatePath = path.join(
+      process.cwd(),
+      "public/templates-new",
+      templateName
+    );
+    console.log("Template path:", templatePath);
+    console.log("Template name:", templateName);
     const assets = await fetchAssets(templatePath);
-    console.log('Assets found:', assets.length);
+    console.log("Assets found:", assets.length);
 
     // Combine HTML files and assets for deployment
     const allFiles: DeploymentFile[] = [
-      ...files.map(f => ({
+      ...files.map((f) => ({
         name: f.name,
         content: f.content,
-        contentType: 'text/html'
+        contentType: "text/html",
       })),
-      ...assets.map(asset => ({
+      ...assets.map((asset) => ({
         name: asset.name,
         content: asset.content,
-        contentType: asset.contentType
-      }))
+        contentType: asset.contentType,
+      })),
     ];
-    
-    console.log('Total files to deploy:', allFiles.length);
-    console.log('File names:', allFiles.map(f => f.name));
+
+    console.log("Total files to deploy:", allFiles.length);
+    console.log(
+      "File names:",
+      allFiles.map((f) => f.name)
+    );
 
     // Deploy to S3
     const [deployment, previewUrl] = await Promise.all([
       s3.deploy(siteId, allFiles, validatedData.htmlSrc),
-      previewService.generatePreview(files.find(f => f.name === 'index.html')?.content || '', siteId),
+      previewService.generatePreview(
+        files.find((f) => f.name === "index.html")?.content || "",
+        siteId
+      ),
     ]);
 
     // Save to Supabase

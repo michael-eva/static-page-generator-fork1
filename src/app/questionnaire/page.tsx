@@ -14,6 +14,7 @@ import { FormProgressTracker } from './components/FormProgressTracker'
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { BusinessInfoSchema } from "@/types/business";
 
 type ContactType = 'form' | 'email' | 'phone' | 'subscribe' | '';
 
@@ -66,7 +67,7 @@ const getInitialFormData = (useSelectedCard: boolean, selectedCard: any): FormDa
             description: '',
             offerings: [''],
             location: '',
-            htmlSrc: '',
+            htmlSrc: selectedCard?.iframeSrc,
             images: [{ path: '', description: '' }],
             design_preferences: {
                 style: '',
@@ -94,7 +95,7 @@ const getInitialFormData = (useSelectedCard: boolean, selectedCard: any): FormDa
             description: selectedCard?.description ?? '',
             offerings: selectedCard?.offering ?? [''],
             location: '',
-            htmlSrc: selectedCard?.iframeSrc ?? '',
+            htmlSrc: selectedCard?.iframeSrc,
             images: selectedCard?.images ?? [{ path: '', description: '' }],
             design_preferences: {
                 style: selectedCard?.style ?? '',
@@ -116,56 +117,23 @@ const getInitialFormData = (useSelectedCard: boolean, selectedCard: any): FormDa
 };
 
 const formSchema = z.object({
-    business_info: z.object({
-        name: z.string().min(1, "Business name is required"),
-        description: z.string().min(1, "Description is required"),
-        offerings: z.array(z.string().min(1, "Offering cannot be empty")),
-        location: z.string(),
-        htmlSrc: z.string(),
+    business_info: BusinessInfoSchema.omit({ userId: true }).extend({
         images: z.array(z.object({
             path: z.string(),
             description: z.string(),
             file: z.any().optional()
         })),
-        design_preferences: z.object({
-            style: z.string(),
-            color_palette: z.string()
-        }),
-        contact_preferences: z.object({
-            type: z.enum(["form", "email", "phone", "subscribe", ""]),
-            business_hours: z.string(),
-            contact_email: z.string()
-                .refine((email) => {
-                    const contactType = (email as any).parent?.type;
-                    if (["form", "email", "subscribe"].includes(contactType)) {
-                        return email && email.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i);
-                    }
-                    return true;
-                }, { message: "Invalid email address" })
-                .optional(),
-            contact_phone: z.string().optional()
-        }).refine((data) => {
-            if (["form", "email", "subscribe"].includes(data.type) && !data.contact_email) {
-                return false;
-            }
-            return true;
-        }, {
-            message: "Email address is required for the selected contact method",
-            path: ["contact_email"]
-        }).refine((data) => {
-            if (data.type === "phone" && !data.contact_phone) {
-                return false;
-            }
-            return true;
-        }, {
-            message: "Phone number is required for the selected contact method",
-            path: ["contact_phone"]
-        }),
         branding: z.object({
             logo_url: z.string(),
             default_logo_url: z.string().optional(),
             logo_file: z.any().optional().nullable(),
             tagline: z.string()
+        }),
+        contact_preferences: z.object({
+            type: z.enum(["form", "email", "phone", "subscribe", ""]),
+            business_hours: z.string(),
+            contact_email: z.string(),
+            contact_phone: z.string()
         })
     })
 });

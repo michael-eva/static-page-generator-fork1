@@ -30,10 +30,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     onUploadComplete,
     siteId,
 }) => {
-    const [uploading, setUploading] = useState(false);
+    const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
 
     const uploadFile = async (file: File) => {
-        setUploading(true);
+        setUploadingFiles(prev => new Set(prev).add(file.name));
         console.log('Starting file upload:', {
             fileName: file.name,
             type,
@@ -69,7 +69,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         } catch (error) {
             console.error('Upload error:', error);
         } finally {
-            setUploading(false);
+            setUploadingFiles(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(file.name);
+                return newSet;
+            });
         }
     };
 
@@ -151,9 +155,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                     className="w-full p-2 border rounded-md"
                 />
             )}
-            {uploading && (
+            {uploadingFiles.size > 0 && (
                 <div className="text-sm text-blue-600">
-                    Uploading...
+                    Uploading {uploadingFiles.size} file(s)...
+                    {Array.from(uploadingFiles).map(fileName => (
+                        <div key={fileName} className="text-xs">
+                            {fileName}
+                        </div>
+                    ))}
                 </div>
             )}
         </div>
