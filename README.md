@@ -7,6 +7,7 @@ Notes:
 Michael Up to:
 [ ] get contact submission working
 [ ] website generating loader should be more responsive - give the user the different loading states as it seems very stationary
+[ ] feedback generator
 [X] redirect to the website in their profile rather than the configure_domain
 [X] button to view website instead of link
 [X] limit users to 2 sites

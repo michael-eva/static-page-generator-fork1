@@ -270,7 +270,7 @@ export default function WebsiteBuilderForm() {
             }
 
             // router.push(`/configure_domain?siteId=${responseData.site_id}&previewUrl=${encodeURIComponent(responseData.preview_url)}`);
-            router.push(`/${userId}`);
+            router.push(`/${userId}?feedback=true`);
         } catch (error) {
             console.error('Error in form submission:', error);
             setSubmitStatus({

@@ -1,21 +1,24 @@
 'use client'
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { use } from 'react'
 import { useProjectLimits } from "@/hooks/useProjectLimits"
 import { toast } from "react-hot-toast"
 import { Button } from "@/components/ui/button"
 import { useWebsites } from "@/hooks/useWebsites"
 import WebsiteCard from "./components/WebsiteCard"
+import { FeedbackDialog } from "./components/FeedbackDialog"
 
 interface DashboardProps {
     params: Promise<{ userId: string }>;
 }
 
 export default function Dashboard({ params }: DashboardProps) {
+    const searchParams = useSearchParams()
     const router = useRouter()
     const resolvedParams = use(params)
     const { data: projectLimits } = useProjectLimits(resolvedParams.userId)
     const { data: websites } = useWebsites(resolvedParams.userId);
+    const feedback = searchParams.get("feedback") === "true"
 
     const handleCreateNewProject = () => {
         if (!projectLimits?.canCreateMore) {
@@ -25,8 +28,20 @@ export default function Dashboard({ params }: DashboardProps) {
         router.push('/questionnaire')
     }
 
+    const handleFeedbackDialogChange = (open: boolean) => {
+        if (!open) {
+            // Remove feedback from URL when dialog is closed
+            router.push(`/${resolvedParams.userId}`)
+        }
+    }
+
     return (
         <div className="min-h-screen w-full bg-muted/40 p-8">
+            <FeedbackDialog
+                open={feedback}
+                onOpenChange={handleFeedbackDialogChange}
+                userId={resolvedParams.userId}
+            />
             <div className="mx-auto max-w-7xl">
                 <div className="mb-8">
                     <div className="flex items-center justify-between">
