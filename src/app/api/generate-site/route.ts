@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
 import { S3Service, DeploymentFile } from "../../services/s3";
-import { LandingPageGenerator } from "../../services/generator";
+
 import { checkRateLimit } from "../../core/security";
 import { supabase } from "@/lib/supabase/server/supsbase";
 import { PreviewService } from "@/app/services/preview";
-import { fetchTemplate } from "@/app/services/utils";
-import { fetchAssets } from "@/app/services/assetUtils";
-import { createCustomColorStylesheet } from "@/app/services/color-stylesheet-generator";
-import path from "path";
 import { BusinessInfoSchema } from "@/types/business";
 import { checkUserProjectLimit } from "./helper";
+import { LandingPageGenerator } from "@/app/services/claude-generator";
 
 const s3 = new S3Service();
 const generator = new LandingPageGenerator();
@@ -21,10 +18,84 @@ export async function POST(request: Request) {
     // Check rate limit and API key
     await checkRateLimit(request);
 
-    const body = await request.json();
-    const validatedData = BusinessInfoSchema.parse(body);
+    // const body = await request.json();
+    // const validatedData = BusinessInfoSchema.parse(body);
+    const validatedData = {
+      userId: "56991853-21b1-469c-8dee-12f09f5d945f",
+      name: "Alpine Landscape Design",
+      description:
+        "Premium landscape and garden design services for residential and commercial properties. We create stunning outdoor spaces that blend beauty with functionality.",
+      offerings: [
+        "Garden Design",
+        "Hardscape Installation",
+        "Water Features",
+        "Outdoor Lighting",
+        "Lawn Care",
+      ],
+      location: "1234 Mountain View Road, Boulder, CO 80302",
+      images: [
+        {
+          url: "https://example.com/images/garden1.jpg",
+          description: "Modern garden design with stone pathways",
+          metadata: {
+            width: 800,
+            height: 600,
+            aspectRatio: 1.33,
+          },
+        },
+        {
+          url: "https://example.com/images/water-feature.jpg",
+          description: "Custom water feature for backyard patio",
+          metadata: {
+            width: 1200,
+            height: 800,
+            aspectRatio: 1.5,
+          },
+        },
+        {
+          url: "https://example.com/images/outdoor-lighting.jpg",
+          description: "Night view of garden with professional lighting",
+          metadata: {
+            width: 900,
+            height: 600,
+            aspectRatio: 1.5,
+          },
+        },
+      ],
+      design_preferences: {
+        style: "Modern and Natural",
+        color_palette: {
+          name: "Earth Tones",
+          theme: "light",
+          roles: {
+            background: "#f8f5f2",
+            surface: "#ffffff",
+            text: "#2d3142",
+            textSecondary: "#4f5d75",
+            primary: "#3a7d44",
+            accent: "#d58936",
+          },
+        },
+      },
+      contact_preferences: {
+        type: "form",
+        business_hours:
+          "Monday-Friday: 8am-6pm, Saturday: 9am-3pm, Sunday: Closed",
+        contact_email: "info@alpinelandscapedesign.com",
+        contact_phone: "(303) 555-7890",
+      },
+      branding: {
+        logo_url: "https://example.com/images/alpine-logo.png",
+        logo_metadata: {
+          width: 240,
+          height: 80,
+          aspectRatio: 3,
+        },
+        tagline: "Transforming Outdoor Spaces into Natural Paradises",
+      },
+    };
     const { userId } = validatedData;
-
+    console.log("validatedData", validatedData);
     // Check project limit before proceeding
     const canCreateProject = await checkUserProjectLimit(userId);
     if (!canCreateProject) {
@@ -33,9 +104,7 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
-    // #1: Fetch the template
-    const html = await fetchTemplate(validatedData.htmlSrc);
-    console.log("HTML:", html);
+
     // we need to fetch all the css as js files from the template too
     siteId = `${validatedData.name
       .toLowerCase()
@@ -45,74 +114,12 @@ export async function POST(request: Request) {
     // #2: Generate HTML files
     const files = await generator.generate({
       ...validatedData,
-      htmlContent: html,
       images: validatedData.images.map((img) => ({
         url: img.url,
         description: img.description,
         metadata: img.metadata,
       })),
     });
-    console.log("Generated files:", files);
-
-    // #3: Fetch assets from template
-    const templateName = validatedData.htmlSrc
-      .split("/")
-      .find((part, index, array) => array[index - 1] === "templates-new");
-    if (!templateName) {
-      throw new Error("Could not determine template name from htmlSrc");
-    }
-    const templatePath = path.join(
-      process.cwd(),
-      "public/templates-new",
-      templateName
-    );
-    console.log("Template path:", templatePath);
-    console.log("Template name:", templateName);
-    const assets = await fetchAssets(templatePath);
-    console.log("Assets found:", assets.length);
-
-    // Log some CSS assets to help with debugging
-    const cssAssets = assets.filter((asset) => asset.name.endsWith(".css"));
-    console.log(
-      `Found ${cssAssets.length} CSS files: ${cssAssets
-        .map((a) => a.name)
-        .join(", ")}`
-    );
-
-    // Process CSS files to replace colors based on user preferences
-    // Import the CSS modifier utility
-    const { processAssetFiles } = await import("@/app/services/cssModifier");
-
-    // Step 1: Process existing CSS files with our modifier
-    const processedCssAssets = processAssetFiles(assets, validatedData);
-
-    // Step 2: Generate a custom color stylesheet that will override template defaults
-    const customColorStylesheet = createCustomColorStylesheet(validatedData);
-    console.log(
-      "Generated custom color stylesheet with high-specificity selectors"
-    );
-
-    // Step 3: Combine all assets with our custom stylesheet added last (to override others)
-    const allProcessedAssets = [
-      ...processedCssAssets, // Process original assets (including CSS)
-      customColorStylesheet, // Add our custom colors stylesheet (will override defaults)
-    ];
-
-    // Log CSS changes for debugging
-    console.log(
-      `Processed ${processedCssAssets.length} CSS files with user design preferences`
-    );
-    console.log(`Final asset count: ${allProcessedAssets.length} files`);
-    if (validatedData.design_preferences?.color_palette?.roles) {
-      console.log(
-        "Applied color roles:",
-        JSON.stringify(
-          validatedData.design_preferences.color_palette.roles,
-          null,
-          2
-        )
-      );
-    }
 
     // Combine HTML files and assets for deployment
     const allFiles: DeploymentFile[] = [
@@ -121,18 +128,7 @@ export async function POST(request: Request) {
         content: f.content,
         contentType: "text/html",
       })),
-      ...allProcessedAssets.map((asset) => ({
-        name: asset.name,
-        content: asset.content,
-        contentType: asset.contentType,
-      })),
     ];
-
-    console.log("Total files to deploy:", allFiles.length);
-    console.log(
-      "File names:",
-      allFiles.map((f) => f.name)
-    );
 
     // Deploy to S3
     const [deployment, previewUrl] = await Promise.all([
@@ -161,7 +157,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       site_id: siteId,
       status: "completed",
-      preview_url: deployment.url,
+      // preview_url: deployment.url,
       dns_configuration: {
         type: "CNAME",
         name: siteId,

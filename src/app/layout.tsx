@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { SelectedCardProvider } from "@/context/SelectedCardContext";
 import Navbar from '@/components/Navbar'
 import Providers from './providers';
 import { Toaster } from "react-hot-toast";
@@ -32,9 +31,7 @@ export default function RootLayout({
       >
         <Providers>
           <Navbar />
-          <SelectedCardProvider>
-            {children}
-          </SelectedCardProvider>
+          {children}
         </Providers>
         <Toaster />
       </body>

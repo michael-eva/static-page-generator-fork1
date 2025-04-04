@@ -1,7 +1,5 @@
-import { ChatOpenAI } from "@langchain/openai";
 import { z } from "zod";
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
+import Anthropic from "@anthropic-ai/sdk";
 
 export type ImageWithMetadata = {
   url: string;
@@ -62,15 +60,19 @@ const GeneratedFiles = z.object({
 });
 
 export class LandingPageGenerator {
-  private openai: OpenAI;
+  private anthropic: Anthropic;
 
-  constructor() {
-    this.openai = new OpenAI();
+  constructor(apiKey?: string) {
+    this.anthropic = new Anthropic({
+      apiKey: apiKey || process.env.ANTHROPIC_API_KEY,
+    });
   }
 
   async generate(
     businessInfo: BusinessInfo
   ): Promise<Array<{ name: string; content: string }>> {
+    console.log("Starting landing page generation...");
+
     // Format business information for the prompt
     const formattedImages = businessInfo.images
       .map(
@@ -79,16 +81,25 @@ export class LandingPageGenerator {
       )
       .join("\n");
 
+    console.log("Formatted business info:", {
+      name: businessInfo.name,
+      offerings: businessInfo.offerings,
+      imageCount: businessInfo.images.length,
+    });
+
     const formattedOfferings = businessInfo.offerings.join("\n");
     const colorPalette =
       businessInfo.design_preferences.color_palette?.roles || {};
 
-    const completion = await this.openai.beta.chat.completions.parse({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert web developer specializing in creating visually stunning, modern websites. Your task is to generate a complete, production-ready landing page with beautiful styling. The page must look professional and polished without requiring any additional work.
+    try {
+      // Log API configuration
+      console.log("Anthropic API Configuration:", {
+        apiKeyExists: !!this.anthropic.apiKey,
+        apiKeyLength: this.anthropic.apiKey ? this.anthropic.apiKey.length : 0,
+      });
+
+      // Log request payload
+      const systemPrompt = `You are an expert web developer specializing in creating visually stunning, modern websites. Your task is to generate a complete, production-ready landing page with beautiful styling. The page must look professional and polished without requiring any additional work.
 
 CRITICAL REQUIREMENTS:
 1. Create a COMPLETE HTML file with ALL necessary CSS in the head section
@@ -117,19 +128,27 @@ TECHNICAL SPECIFICATIONS:
 - Use Font Awesome or other icon libraries for visual elements
 - Include specific CSS for mobile navigation (hamburger menu)
 
-Do not cut corners on the CSS - the page must look complete and professional without any additional styling needed.`,
-        },
-        {
-          role: "user",
-          content: `Business Information:
+Your response must be well-structured JSON conforming to this schema:
+{
+  "files": [
+    {
+      "name": "index.html",
+      "content": "<!DOCTYPE html>..."
+    }
+  ]
+}
+
+Do not cut corners on the CSS - the page must look complete and professional without any additional styling needed.`;
+
+      const userPrompt = `Business Information:
 Name: ${businessInfo.name}
 Description: ${businessInfo.description}
 Offerings: ${formattedOfferings}
 Location: ${businessInfo.location}
 Images: ${formattedImages}
 Design Style: ${
-            businessInfo.design_preferences.style || "Modern and professional"
-          }
+        businessInfo.design_preferences.style || "Modern and professional"
+      }
 Color Palette: 
 - Background: ${colorPalette.background || "#ffffff"}
 - Surface: ${colorPalette.surface || "#f8f9fa"}
@@ -152,25 +171,109 @@ I specifically need:
 3. Responsive design for all devices
 4. Modern, attractive styling for all elements
 5. Complete CSS with proper hover states and transitions
-6. A fully functional hamburger menu for mobile`,
-        },
-      ],
-      response_format: zodResponseFormat(GeneratedFiles, "json"),
-      max_tokens: 4000,
-    });
+6. A fully functional hamburger menu for mobile`;
 
-    const files = completion.choices[0].message.parsed?.files || [];
+      const requestPayload = {
+        model: "claude-3-opus-20240229",
+        max_tokens: 4000,
+        system: systemPrompt,
+        messages: [
+          {
+            role: "user" as const,
+            content: userPrompt,
+          },
+        ],
+        temperature: 0.7,
+      };
 
-    // If no files were generated, create an error message
-    if (files.length === 0) {
+      console.log(
+        "Request payload structure:",
+        JSON.stringify(requestPayload, null, 2)
+      );
+
+      try {
+        const response = await this.anthropic.messages.create(requestPayload);
+        console.log("API call successful:", {
+          responseType: response.content[0].type,
+          contentLength:
+            response.content[0].type === "text"
+              ? response.content[0].text.length
+              : 0,
+        });
+
+        // Parse the response content
+        const content =
+          response.content[0].type === "text" ? response.content[0].text : "";
+
+        console.log("Response content length:", content.length);
+
+        let parsedContent;
+
+        try {
+          parsedContent = JSON.parse(content);
+          // Validate with Zod schema
+          const validatedFiles = GeneratedFiles.parse(parsedContent);
+          return validatedFiles.files;
+        } catch (parseError) {
+          console.error(
+            "Failed to parse Claude's response as JSON:",
+            parseError
+          );
+
+          // Attempt to extract JSON from the response if it's wrapped in text
+          const jsonMatch =
+            content.match(/```json\n([\s\S]*?)\n```/) ||
+            content.match(/{[\s\S]*}/);
+
+          if (jsonMatch) {
+            try {
+              const extractedJson = jsonMatch[0].replace(/```json\n|```/g, "");
+              parsedContent = JSON.parse(extractedJson);
+              const validatedFiles = GeneratedFiles.parse(parsedContent);
+              return validatedFiles.files;
+            } catch (extractError) {
+              console.error(
+                "Failed to extract JSON from response:",
+                extractError
+              );
+            }
+          }
+
+          // If all parsing attempts fail, return an error
+          return [
+            {
+              name: "error.txt",
+              content: "Failed to parse Claude's response. Please try again.",
+            },
+          ];
+        }
+      } catch (apiError: any) {
+        console.error("Anthropic API Error Details:", {
+          status: apiError.status,
+          statusText: apiError.statusText,
+          errorType: apiError.error?.type,
+          errorMessage: apiError.error?.message,
+          requestId: apiError.request_id,
+          fullError: JSON.stringify(apiError, null, 2),
+        });
+        throw apiError;
+      }
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error("Detailed error in generate():", {
+        name: err.name,
+        message: err.message,
+        type: (err as any).type,
+        status: (err as any).status,
+        requestId: (err as any).request_id,
+        fullError: JSON.stringify(err, null, 2),
+      });
       return [
         {
           name: "error.txt",
-          content: "Failed to generate landing page. Please try again.",
+          content: `Failed to generate landing page: ${err.message || err}`,
         },
       ];
     }
-
-    return files;
   }
 }

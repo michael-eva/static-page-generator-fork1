@@ -3,7 +3,6 @@ import { z } from "zod";
 export const BusinessInfoSchema = z.object({
   userId: z.string(),
   name: z.string().min(1, "Business name is required"),
-  htmlSrc: z.string(),
   description: z.string().min(1, "Description is required"),
   offerings: z.array(z.string().min(1, "Offering cannot be empty")),
   location: z.string(),

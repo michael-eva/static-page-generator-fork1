@@ -3,7 +3,6 @@
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from "@/components/ui/button"
 import React, { useState, useEffect, useRef } from 'react'
-import { useSelectedCard } from '@/context/SelectedCardContext'
 import { generateSiteId } from '../utils/siteId'
 import { useDialog } from '../../hooks/use-dialog'
 import { CustomDialog } from '@/components/dialog'
@@ -14,142 +13,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { BusinessInfoSchema } from "@/types/business";
 import { useSupabaseSession } from '@/hooks/useSupabaseSession'
-
-type ContactType = 'form' | 'email' | 'phone' | 'subscribe' | '';
-
-interface FormData {
-    business_info: {
-        name: string | undefined;
-        description: string | undefined;
-        offerings: string[];
-        location: string;
-        htmlSrc: string;
-        images: {
-            path: string;
-            description: string;
-            file?: File | null;
-        }[];
-        design_preferences: {
-            style: string | undefined;
-            color_palette: {
-                name: string;
-                theme: string;
-                roles: {
-                    background: string;
-                    surface: string;
-                    text: string;
-                    textSecondary: string;
-                    primary: string;
-                    accent: string;
-                };
-            };
-        };
-        contact_preferences: {
-            type: ContactType;
-            business_hours: string;
-            contact_email: string;
-            contact_phone: string;
-        };
-        branding: {
-            logo_url: string | undefined;
-            default_logo_url?: string;
-            logo_file?: {
-                file: File | null;
-                name: string;
-                type: string;
-                size: number;
-                lastModified: number;
-                uploadedAt: string;
-            } | null;
-            tagline: string | undefined;
-            siteId: string;
-        };
-    };
-}
-
-
-// Toggle this flag to enable/disable selectedCard functionality
-const USE_SELECTED_CARD = false;
-
-const getInitialFormData = (useSelectedCard: boolean, selectedCard: any): FormData => {
-    const emptyFormData: FormData = {
-        business_info: {
-            name: '',
-            description: '',
-            offerings: [''],
-            location: '',
-            htmlSrc: selectedCard?.iframeSrc,
-            images: [{ path: '', description: '' }],
-            design_preferences: {
-                style: '',
-                color_palette: {
-                    name: '',
-                    theme: '',
-                    roles: {
-                        background: '',
-                        surface: '',
-                        text: '',
-                        textSecondary: '',
-                        primary: '',
-                        accent: ''
-                    }
-                }
-            },
-            contact_preferences: {
-                type: '',
-                business_hours: '',
-                contact_email: '',
-                contact_phone: ''
-            },
-            branding: {
-                logo_url: '',
-                logo_file: null,
-                tagline: '',
-                siteId: ''
-            }
-        }
-    };
-
-    if (!useSelectedCard) return emptyFormData;
-
-    return {
-        business_info: {
-            name: selectedCard?.name ?? '',
-            description: selectedCard?.description ?? '',
-            offerings: selectedCard?.offering ?? [''],
-            location: '',
-            htmlSrc: selectedCard?.iframeSrc,
-            images: selectedCard?.images ?? [{ path: '', description: '' }],
-            design_preferences: {
-                style: selectedCard?.style ?? '',
-                color_palette: selectedCard?.colorPalette ?? {
-                    name: '',
-                    theme: '',
-                    roles: {
-                        background: '',
-                        surface: '',
-                        text: '',
-                        textSecondary: '',
-                        primary: '',
-                        accent: ''
-                    }
-                }
-            },
-            contact_preferences: {
-                type: '',
-                business_hours: '',
-                contact_email: '',
-                contact_phone: ''
-            },
-            branding: {
-                logo_url: selectedCard?.logoUrl ?? '',
-                logo_file: null,
-                tagline: selectedCard?.tagline ?? '',
-                siteId: ''
-            }
-        }
-    };
-};
 
 const formSchema = z.object({
     business_info: BusinessInfoSchema.omit({ userId: true }).extend({
@@ -182,11 +45,45 @@ const TABS = ["basic", "offerings", "visual", "location", "contact"] as const;
 export type TabValue = typeof TABS[number];
 
 export default function WebsiteBuilderForm() {
-    const { selectedCard, isLoading } = useSelectedCard();
     const { isOpen, close, toggle } = useDialog();
     const { session, userId } = useSupabaseSession();
 
-    const defaultFormData = getInitialFormData(USE_SELECTED_CARD, selectedCard);
+    const defaultFormData: FormSchema = {
+        business_info: {
+            name: '',
+            description: '',
+            offerings: [''],
+            location: '',
+            images: [{ path: '', description: '' }],
+            design_preferences: {
+                style: '',
+                color_palette: {
+                    name: '',
+                    theme: '',
+                    roles: {
+                        background: '',
+                        surface: '',
+                        text: '',
+                        textSecondary: '',
+                        primary: '',
+                        accent: ''
+                    }
+                }
+            },
+            contact_preferences: {
+                type: '',
+                business_hours: '',
+                contact_email: '',
+                contact_phone: ''
+            },
+            branding: {
+                logo_url: '',
+                logo_file: null,
+                tagline: '',
+                siteId: ''
+            }
+        }
+    }
 
     const form = useForm<FormSchema>({
         resolver: zodResolver(formSchema),
@@ -237,7 +134,7 @@ export default function WebsiteBuilderForm() {
     }, [form.watch(), currentTab, isClient, form]); // Watch for form changes and tab changes
 
     // Loading state
-    if (isLoading || !isClient) {
+    if (!isClient) {
         return (
             <div className="container mx-auto p-6 space-y-8 max-w-4xl">
                 <div className="animate-pulse space-y-4">
@@ -307,8 +204,6 @@ export default function WebsiteBuilderForm() {
 
     // Handle form submission
     const onSubmit = async (data: FormSchema) => {
-        console.log(data);
-
         try {
             if (!session) {
                 window.location.href = '/auth/sign-in?returnUrl=questionnaire';
