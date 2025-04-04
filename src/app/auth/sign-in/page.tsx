@@ -2,6 +2,7 @@
 import { supabase } from "@/lib/supabase/client/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, Suspense } from "react"
+import { FcGoogle } from 'react-icons/fc'
 
 function SignInContent() {
     const searchParams = useSearchParams()
@@ -102,8 +103,9 @@ function SignInContent() {
                 <button
                     onClick={handleGoogleSignIn}
                     disabled={loading}
-                    className="w-full bg-white border border-gray-300 p-2 rounded hover:bg-gray-50"
+                    className="w-full bg-white border border-gray-300 p-2 rounded hover:bg-gray-50 flex items-center justify-center gap-2"
                 >
+                    <FcGoogle className="text-xl" />
                     {isSignUp ? 'Sign Up' : 'Sign In'} with Google
                 </button>
             </div>
