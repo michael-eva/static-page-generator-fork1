@@ -52,14 +52,6 @@ export default function WebsiteBuilderForm() {
     const { data: projectLimits } = useProjectLimits(userId)
     const router = useRouter()
 
-    const [showLimitDialog, setShowLimitDialog] = useState(false);
-
-    // Add this useEffect to check limits when component mounts
-    useEffect(() => {
-        if (projectLimits && !projectLimits.canCreateMore) {
-            setShowLimitDialog(true);
-        }
-    }, [projectLimits]);
 
     const defaultFormData: FormSchema = {
         business_info: {
@@ -166,7 +158,7 @@ export default function WebsiteBuilderForm() {
                 <div className="bg-white p-8 rounded-lg shadow-md text-center space-y-6">
                     <h2 className="text-2xl font-bold text-gray-900">Website Limit Reached</h2>
                     <div className="space-y-4 text-gray-600">
-                        <p>You've reached the maximum number of websites you can create.</p>
+                        <p>You&apos;ve reached the maximum number of websites you can create.</p>
                         <p>To create a new website, you can delete existing ones from your profile.</p>
                     </div>
                     <Button

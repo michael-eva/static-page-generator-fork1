@@ -213,10 +213,12 @@ ${bodyMatch[0]}
           }
         } catch (error) {
           // JSON parsing failed, continue to other methods
+          console.error(error);
         }
       }
     } catch (error) {
       // Error in JSON extraction, continue to other methods
+      console.error(error);
     }
     // Look for just the doctype and html open tag, then find the html close tag
     const docTypeIndex = responseText.indexOf("<!DOCTYPE html>");
