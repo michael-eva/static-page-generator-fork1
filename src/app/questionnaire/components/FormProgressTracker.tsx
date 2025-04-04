@@ -24,7 +24,7 @@ const getTabCompletionStatus = (
       return values.business_info.offerings.length > 0 &&
         values.business_info.offerings.every(o => !!o);
     case "visual":
-      return !!values.business_info.design_preferences.color_palette;
+      return !!values.business_info.design_preferences.color_palette.name;
     case "location":
       // Location is optional
       return true;
@@ -55,33 +55,8 @@ export function FormProgressTracker({ form, currentTab, setCurrentTab }: FormPro
     { id: "location", label: "Location & Hours", required: false },
     { id: "contact", label: "Contact Info", required: true }
   ];
-
-  // Calculate overall progress
-  const completedTabs = tabs
-    .filter(tab => tab.required)
-    .filter(tab => getTabCompletionStatus(tab.id, values))
-    .length;
-
-  const requiredTabs = tabs.filter(tab => tab.required).length;
-
   return (
     <div className="mb-8">
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex items-center">
-          <span className="text-sm font-medium text-gray-700 mr-2">Required information</span>
-          <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-0.5 rounded-full">
-            {completedTabs} of {requiredTabs} completed
-          </span>
-        </div>
-      </div>
-
-      <div className="w-full bg-gray-200 h-0.5 mb-6">
-        <div
-          className="bg-primary h-0.5 transition-all duration-500 ease-in-out"
-          style={{ width: `${(completedTabs / requiredTabs) * 100}%` }}
-        ></div>
-      </div>
-
       <div className="flex items-center justify-between sm:hidden">
         <button
           type="button"

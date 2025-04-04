@@ -13,6 +13,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { BusinessInfoSchema } from "@/types/business";
 import { useSupabaseSession } from '@/hooks/useSupabaseSession'
+import { useRouter } from 'next/navigation'
+import { useProjectLimits } from '@/hooks/useProjectLimits'
 
 const formSchema = z.object({
     business_info: BusinessInfoSchema.omit({ userId: true }).extend({
@@ -47,6 +49,17 @@ export type TabValue = typeof TABS[number];
 export default function WebsiteBuilderForm() {
     const { isOpen, close, toggle } = useDialog();
     const { session, userId } = useSupabaseSession();
+    const { data: projectLimits } = useProjectLimits(userId)
+    const router = useRouter()
+
+    const [showLimitDialog, setShowLimitDialog] = useState(false);
+
+    // Add this useEffect to check limits when component mounts
+    useEffect(() => {
+        if (projectLimits && !projectLimits.canCreateMore) {
+            setShowLimitDialog(true);
+        }
+    }, [projectLimits]);
 
     const defaultFormData: FormSchema = {
         business_info: {
@@ -146,6 +159,27 @@ export default function WebsiteBuilderForm() {
         );
     }
 
+    // Add early return if user has reached their limit
+    if (projectLimits && !projectLimits.canCreateMore) {
+        return (
+            <div className="container mx-auto p-6 space-y-8 max-w-4xl">
+                <div className="bg-white p-8 rounded-lg shadow-md text-center space-y-6">
+                    <h2 className="text-2xl font-bold text-gray-900">Website Limit Reached</h2>
+                    <div className="space-y-4 text-gray-600">
+                        <p>You've reached the maximum number of websites you can create.</p>
+                        <p>To create a new website, you can delete existing ones from your profile.</p>
+                    </div>
+                    <Button
+                        onClick={() => router.push(`/${userId}`)}
+                        className="mt-4"
+                    >
+                        Go to Profile
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
     // Function to check if current tab is valid
     const isCurrentTabValid = () => {
         const values = form.getValues();
@@ -190,8 +224,12 @@ export default function WebsiteBuilderForm() {
             values.business_info.description &&
             values.business_info.offerings.length > 0 &&
             values.business_info.offerings.every(o => !!o) &&
-            values.business_info.design_preferences.color_palette &&
+            values.business_info.design_preferences.color_palette.name &&
             values.business_info.contact_preferences.type
+            && ((["form", "email", "subscribe"].includes(values.business_info.contact_preferences.type)
+                && !!values.business_info.contact_preferences.contact_email)
+                || (values.business_info.contact_preferences.type === "phone"
+                    && !!values.business_info.contact_preferences.contact_phone))
         );
     };
 
@@ -206,7 +244,7 @@ export default function WebsiteBuilderForm() {
     const onSubmit = async (data: FormSchema) => {
         try {
             if (!session) {
-                window.location.href = '/auth/sign-in?returnUrl=questionnaire';
+                router.push('/auth/sign-in?returnUrl=questionnaire');
                 return;
             }
 
@@ -239,7 +277,8 @@ export default function WebsiteBuilderForm() {
                 throw new Error(responseData.error || 'Failed to generate site');
             }
 
-            window.location.href = `/configure_domain?siteId=${responseData.site_id}&previewUrl=${encodeURIComponent(responseData.preview_url)}`;
+            // router.push(`/configure_domain?siteId=${responseData.site_id}&previewUrl=${encodeURIComponent(responseData.preview_url)}`);
+            router.push(`/${userId}`);
         } catch (error) {
             console.error('Error in form submission:', error);
             setSubmitStatus({
