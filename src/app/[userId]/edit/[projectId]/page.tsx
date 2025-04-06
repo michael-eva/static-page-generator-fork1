@@ -15,7 +15,7 @@ interface PageProps {
 export default function ProjectEditPage({ params }: PageProps) {
     const { projectId, userId } = use(params)
     const { data: websites, isLoading, error } = useWebsites(userId);
-    const [isChatMinimized, setIsChatMinimized] = useState(false);
+    // const [isChatMinimized, setIsChatMinimized] = useState(false);s
 
     if (isLoading) return (
         <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
