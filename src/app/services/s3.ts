@@ -41,6 +41,10 @@ export class S3Service {
     });
   }
 
+  public getS3Client(): S3Client {
+    return this.s3;
+  }
+
   private async ensurePublicAccess() {
     // Set bucket policy
     const bucketPolicy = {
