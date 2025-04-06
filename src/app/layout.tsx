@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Static Page Generator",
-  description: "Generate static pages easily",
+  title: "BuildSite",
+  description: "Build your website in minutes",
 };
 
 export default function RootLayout({
