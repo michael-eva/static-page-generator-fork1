@@ -4,10 +4,7 @@ Notes:
 [ ] project limit is env var stored in .env.local: NEXT_PUBLIC_PROJECT_LIMIT=2
 [ ] env vars need an anthropic api key
 
-Michael Up to:
-[ ] get contact submission working
-[ ] website generating loader should be more responsive - give the user the different loading states as it seems very stationary
-[ ] feedback generator
-[X] redirect to the website in their profile rather than the configure_domain
-[X] button to view website instead of link
-[X] limit users to 2 sites
+**Optimisation**
+[ ] While site is generating, we should add loading states relevant to where the generation is at
+[ ] While images are loading in the 'Visual Style' and you navigate away, they stop uploading
+[ ] Preview image not displaying correctly on profile page

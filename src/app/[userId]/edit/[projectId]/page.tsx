@@ -105,12 +105,12 @@ export default function ProjectEditPage({ params }: PageProps) {
                 </Panel>
 
                 {/* Resize Handle */}
-                <PanelResizeHandle>
+                {/* <PanelResizeHandle>
                     <GripVertical className="h-4 w-4" />
-                </PanelResizeHandle>
+                </PanelResizeHandle> */}
 
                 {/* Chat Panel */}
-                <Panel
+                {/* <Panel
                     defaultSize={25}
                     minSize={10}
                     maxSize={50}
@@ -126,15 +126,15 @@ export default function ProjectEditPage({ params }: PageProps) {
                         <CardContent className={isChatMinimized ? "hidden" : ""}>
                             <div className="flex flex-col h-[calc(100vh-300px)]">
                                 <div className="flex-1 overflow-y-auto mb-4">
-                                    {/* Chat messages will go here */}
+                                    
                                 </div>
                                 <div className="border-t pt-4">
-                                    {/* Chat input will go here */}
+
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
-                </Panel>
+                </Panel> */}
             </PanelGroup>
         </div>
     )
