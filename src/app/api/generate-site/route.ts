@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   let siteId: string | undefined;
   try {
     // Check rate limit and API key
-    await checkRateLimit(request);
+    // await checkRateLimit(request);
 
     const body = await request.json();
     const validatedData = BusinessInfoSchema.parse(body);
