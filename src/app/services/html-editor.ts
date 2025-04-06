@@ -2,23 +2,12 @@ import Anthropic from "@anthropic-ai/sdk";
 import { S3Service } from "./s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { z } from "zod";
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
-
-const EditResponse = z.object({
-  old_html: z.string(),
-  new_html: z.string(),
-  changes: z.array(z.object({
-    old_content: z.string(),
-    new_content: z.string(),
-    description: z.string()
-  }))
-});
+import Groq from "groq-sdk";
 
 export class HTMLEditor {
   private anthropic: Anthropic;
   private s3: S3Service;
-  private openai: OpenAI;
+  private groq: InstanceType<typeof Groq>;
 
   constructor(apiKey?: string) {
     // Check if we're in a browser environment
@@ -36,7 +25,7 @@ export class HTMLEditor {
       },
     });
     this.s3 = new S3Service();
-    this.openai = new OpenAI();
+    this.groq = new Groq();
   }
 
   private extractHtmlContent(responseText: string): string {
@@ -106,7 +95,7 @@ export class HTMLEditor {
     `;
   }
 
-  async editHTML(siteId: string, prompt: string): Promise<{ success: boolean; message: string; old_html?: string; new_html?: string; changes?: Array<{old_content: string, new_content: string, description: string}> }> {
+  async editHTML(siteId: string, prompt: string): Promise<{ success: boolean; message: string; old_html?: string; new_html?: string }> {
     try {
       // Check if the site exists using the S3Service method
       const status = await this.s3.getDeploymentStatus(siteId);
@@ -131,37 +120,63 @@ export class HTMLEditor {
       // Convert the stream to a string
       const currentHTML = await response.Body.transformToString();
 
-      // Prepare the prompt for OpenAI
+      // Prepare the prompt for Groq
       const systemPrompt = `You are an expert web developer. Your task is to edit the provided HTML content based on the user's instructions. 
-You must return a structured response containing both the old and new HTML, along with a description of the changes made.
 
 CRITICAL REQUIREMENTS:
-1. RETURN THE COMPLETE HTML DOCUMENT - do not omit any parts, including:
-   - All DOCTYPE and meta tags
-   - All CSS in <style> tags and external stylesheets
-   - All JavaScript in <script> tags and external scripts
-   - All HTML structure and content
-   - All comments and formatting
-2. PRESERVE THE ORIGINAL HTML STRUCTURE - only modify the specific parts that need to be changed
-3. Keep all existing classes, IDs, and attributes
-4. Maintain all existing functionality and event handlers
-5. Only modify the specific elements or sections mentioned in the user's instructions
-6. If the user's instructions are unclear, make minimal changes and preserve the original structure
+1. RETURN THE COMPLETE, UNCHANGED HTML DOCUMENT - only modify the specific parts mentioned in the instructions
+   - Keep ALL original code, including:
+     * All DOCTYPE and meta tags
+     * All CSS in <style> tags and external stylesheets
+     * All JavaScript in <script> tags and external scripts
+     * All HTML structure and content
+     * All comments and formatting
+     * All classes, IDs, and attributes
+     * All event handlers and functionality
+2. ONLY modify the specific elements or sections mentioned in the user's instructions
+3. If the user's instructions are unclear, make minimal changes and preserve the original structure
 
-The response must be in JSON format with the following structure:
-{
-  "old_html": "The original HTML content",
-  "new_html": "The modified HTML content",
-  "changes": [
-    {
-      "old_content": "The original content that was changed",
-      "new_content": "The new content that replaced it",
-      "description": "A brief description of what was changed"
-    }
-  ]
-}
+EXAMPLE:
+If the original HTML has:
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Site</title>
+  <style>
+    .header { color: blue; }
+    .footer { color: red; }
+  </style>
+</head>
+<body>
+  <div class="header">Welcome</div>
+  <div class="content">Hello World</div>
+  <div class="footer">Copyright 2024</div>
+</body>
+</html>
 
-IMPORTANT: The new_html must be a complete, valid HTML document ready for deployment. Do not use ellipsis (...) or omit any content. Include everything from the original document, only modifying the specific parts mentioned in the instructions.`;
+And the instruction is to "change the header text to 'Welcome Back'", you should return:
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Site</title>
+  <style>
+    .header { color: blue; }
+    .footer { color: red; }
+  </style>
+</head>
+<body>
+  <div class="header">Welcome Back</div>
+  <div class="content">Hello World</div>
+  <div class="footer">Copyright 2024</div>
+</body>
+</html>
+
+Notice how EVERYTHING else remains exactly the same, only the requested change is made.
+
+IMPORTANT: Your response must be ONLY the complete HTML document, starting with <!DOCTYPE html> and ending with </html>.
+DO NOT include any explanations, comments, or additional text.
+DO NOT use markdown formatting or code blocks.
+The response must be a complete, valid HTML document ready for deployment, with ALL original code preserved except for the specific changes requested.`;
 
       const userPrompt = `Current HTML content:
 ${currentHTML}
@@ -171,8 +186,8 @@ ${prompt}
 
 Please provide the complete edited HTML document that implements these changes. Remember to preserve ALL original content and only modify the specific parts mentioned in the instructions. The response must be a complete HTML document ready for deployment.`;
 
-      const completion = await this.openai.beta.chat.completions.parse({
-        model: "gpt-4o",
+      let fullResponse = '';
+      const chatCompletion = await this.groq.chat.completions.create({
         messages: [
           {
             role: "system",
@@ -183,23 +198,27 @@ Please provide the complete edited HTML document that implements these changes. 
             content: userPrompt,
           },
         ],
-        response_format: zodResponseFormat(EditResponse, "json"),
-        max_tokens: 16384,
-        temperature: 0.7,
+        model: "qwen-2.5-coder-32b",
+        temperature: 0.6,
+        max_completion_tokens: 70000,
+        top_p: 0.95,
+        stream: true,
+        stop: null
       });
 
-      const result = completion.choices[0].message.parsed;
-
-      if (!result) {
-        throw new Error("Failed to parse OpenAI response");
+      for await (const chunk of chatCompletion) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        fullResponse += content;
       }
+
+      // Extract the HTML content from the response
+      const newHTML = this.extractHtmlContent(fullResponse);
 
       return {
         success: true,
         message: "Preview changes generated successfully. Please review before deploying.",
-        old_html: result.old_html,
-        new_html: result.new_html,
-        changes: result.changes
+        old_html: currentHTML,
+        new_html: newHTML
       };
     } catch (error) {
       console.error("Error editing HTML:", error);

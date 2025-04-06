@@ -184,43 +184,10 @@ export default function ProjectEditPage({ params }: PageProps) {
             const data = await response.json();
             setMessages(prev => [...prev, { 
                 role: 'user', 
-                content: `I want to add this image to the website`,
+                content: `I've uploaded an image. You can now reference it in your prompts to add it to the website.`,
                 imageUrl: data.url
             }]);
             
-            // Automatically submit the image URL to the edit-html endpoint
-            setIsLoadingEdit(true);
-            const editResponse = await fetch('/api/edit-html', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    siteId: website.site_id,
-                    prompt: `Insert this image into the website: ${data.url}`,
-                    imageUrl: data.url
-                }),
-            });
-
-            const editResult = await editResponse.json();
-            
-            if (editResult.success) {
-                setPreviewChanges({
-                    old_html: editResult.old_html,
-                    new_html: editResult.new_html,
-                    changes: editResult.changes || []
-                });
-                
-                setMessages(prev => [...prev, { 
-                    role: 'assistant', 
-                    content: 'I\'ve added the image to the website. Please review the changes in the preview panel. If you\'re happy with them, click "Deploy Changes" to make them live.' 
-                }]);
-            } else {
-                setMessages(prev => [...prev, { 
-                    role: 'assistant', 
-                    content: `I'm sorry, but I couldn't add the image: ${editResult.message || editResult.error}` 
-                }]);
-            }
         } catch (error) {
             console.error('Upload error:', error);
             setMessages(prev => [...prev, { 
@@ -229,7 +196,11 @@ export default function ProjectEditPage({ params }: PageProps) {
             }]);
         } finally {
             setIsUploading(false);
-            setIsLoadingEdit(false);
+            // Reset the file input
+            const input = document.getElementById('image-upload') as HTMLInputElement;
+            if (input) {
+                input.value = '';
+            }
         }
     };
 
@@ -441,17 +412,30 @@ export default function ProjectEditPage({ params }: PageProps) {
                                                 id="image-upload"
                                                 disabled={isLoadingEdit || isUploading}
                                             />
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-10 w-10 hover:bg-blue-50"
+                                            <label 
+                                                htmlFor="image-upload"
+                                                className="cursor-pointer"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    const input = document.getElementById('image-upload') as HTMLInputElement;
+                                                    if (input) {
+                                                        input.click();
+                                                    }
+                                                }}
                                             >
-                                                {isUploading ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                                                ) : (
-                                                    <Upload className="h-4 w-4" />
-                                                )}
-                                            </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-10 w-10 hover:bg-blue-50"
+                                                    type="button"
+                                                >
+                                                    {isUploading ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                                                    ) : (
+                                                        <Upload className="h-4 w-4" />
+                                                    )}
+                                                </Button>
+                                            </label>
                                             <button
                                                 type="submit"
                                                 disabled={isLoadingEdit || isUploading}
