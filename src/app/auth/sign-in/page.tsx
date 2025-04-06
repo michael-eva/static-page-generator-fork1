@@ -6,7 +6,7 @@ import { FcGoogle } from 'react-icons/fc'
 
 function SignInContent() {
     const searchParams = useSearchParams()
-    const returnUrl = searchParams.get('returnUrl') || '/'
+    const returnUrl = searchParams.get('returnUrl') || 'questionnaire'
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)

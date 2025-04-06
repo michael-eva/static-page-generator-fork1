@@ -21,19 +21,19 @@ export default function Navbar() {
     }
 
     return (
-        <nav className="bg-white shadow-md">
+        <nav className="bg-blue-700 shadow-md">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     <div className="flex">
-                        <Link href="/" className="flex items-center px-2 py-2 text-gray-700 hover:text-gray-900">
-                            Home
+                        <Link href="/questionnaire" className="flex items-center px-2 py-2 text-white hover:text-gray-300">
+                            Build Site
                         </Link>
                     </div>
                     <div className="flex items-center">
                         {user && (
                             <Link
                                 href={`/${user.id}`}
-                                className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                                className="px-4 py-2 text-white hover:text-gray-300"
                             >
                                 Profile
                             </Link>
@@ -41,7 +41,7 @@ export default function Navbar() {
                         {user ? (
                             <Link
                                 href="/"
-                                className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                                className="px-4 py-2 text-white hover:text-gray-300"
                                 onClick={handleSignOut}
                             >
                                 Sign Out
@@ -49,7 +49,7 @@ export default function Navbar() {
                         ) : (
                             <Link
                                 href="/auth/sign-in"
-                                className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                                className="px-4 py-2 text-white hover:text-gray-300"
                             >
                                 Sign In
                             </Link>

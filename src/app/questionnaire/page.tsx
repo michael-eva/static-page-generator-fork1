@@ -292,7 +292,7 @@ export default function WebsiteBuilderForm() {
                     <div className="bg-white p-6 rounded-lg shadow-xl text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
                         <p className="text-lg">Generating your website...</p>
-                        <p className="text-sm text-gray-500 mt-2">This may take a minute</p>
+                        <p className="text-sm text-gray-500 mt-2">This may take a minute, please don&apos;t refresh the page.</p>
                     </div>
                 </div>
             )}
@@ -301,7 +301,22 @@ export default function WebsiteBuilderForm() {
                 className="container mx-auto py-4 sm:py-8 px-4 sm:px-6 max-w-5xl"
                 onSubmit={form.handleSubmit(onSubmit)}
             >
-                <h1 className="text-3xl font-bold mb-4">Website Builder</h1>
+                <h1 className="text-3xl font-bold mb-4 text-blue-600">Build Site</h1>
+                <div className="mb-6">
+                    <p className="text-gray-600">
+                        To generate your website, please complete all required fields across the following sections:
+                    </p>
+                    <ul className="list-disc list-inside mt-2 text-gray-600 space-y-1">
+                        <li>Basic Information - Business name and description</li>
+                        <li>Offerings - Your products or services</li>
+                        <li>Visual Elements - At least one image and branding details</li>
+                        <li>Location - Your business address</li>
+                        <li>Contact Information - How customers can reach you</li>
+                    </ul>
+                    <p className="mt-4 text-sm text-gray-500">
+                        Your progress is automatically saved. You can return to complete the form at any time.
+                    </p>
+                </div>
 
                 <FormProgressTracker
                     form={form}

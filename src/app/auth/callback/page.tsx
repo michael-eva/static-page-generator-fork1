@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase/client/supabase'
 function AuthCallbackContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const returnUrl = searchParams.get('returnUrl') || '/'
+    const returnUrl = searchParams.get('returnUrl') || 'questionnaire'
 
     useEffect(() => {
         // Check auth status and redirect
