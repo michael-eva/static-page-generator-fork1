@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from '@/components/Navbar'
+import ConditionalNavbar from '@/components/ConditionalNavbar';
 import Providers from './providers';
 import { Toaster } from "react-hot-toast";
 import GlobalInfoBanner from "@/components/GlobalInfoBanner";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -32,7 +33,7 @@ export default function RootLayout({
       >
         <Providers>
           <GlobalInfoBanner />
-          <Navbar />
+          <ConditionalNavbar />
           {children}
         </Providers>
         <Toaster />
