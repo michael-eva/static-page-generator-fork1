@@ -8,3 +8,4 @@ Notes:
 [ ] While site is generating, we should add loading states relevant to where the generation is at
 [ ] While images are loading in the 'Visual Style' and you navigate away, they stop uploading
 [ ] Preview image not displaying correctly on profile page
+[ ] Rate limiting
