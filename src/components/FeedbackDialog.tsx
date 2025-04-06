@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { toast } from "react-hot-toast"
 import { cn } from "@/lib/utils"
 import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 interface FeedbackDialogProps {
     open: boolean
@@ -14,7 +15,7 @@ interface FeedbackDialogProps {
     userId: string
 }
 
-type FormData = z.infer<typeof FormDataSchema>
+type FormData = z.infer<typeof formDataSchema>
 
 interface SelectionTileProps {
     selected: boolean
@@ -38,7 +39,7 @@ function SelectionTile({ selected, onClick, label, className }: SelectionTilePro
         </div>
     )
 }
-const FormDataSchema = z.object({
+const formDataSchema = z.object({
     industry: z.enum(['Marketing', 'Consulting', 'Software', 'Technology', 'Other']),
     intendedUse: z.enum(['work', 'personal', 'both', 'exploring']),
     experience: z.array(z.enum(['ease_of_use', 'features', 'design', 'needs_improvement', 'other'])),
@@ -48,13 +49,14 @@ const FormDataSchema = z.object({
     comments: z.string().optional(),
 })
 export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogProps) {
-    const { control, handleSubmit, reset, register, watch } = useForm<FormData>({
+    const { control, handleSubmit, reset, register } = useForm<FormData>({
         defaultValues: {
             experience: [],
             likeToSee: [],
             experienceOther: '',
             likeToSeeOther: '',
-        }
+        },
+        resolver: zodResolver(formDataSchema)
     })
 
     const onSubmit = async (data: FormData) => {
@@ -80,7 +82,7 @@ export function FeedbackDialog({ open, onOpenChange, userId }: FeedbackDialogPro
                 toast.error(result.error || "Failed to submit feedback")
             }
         } catch (error) {
-            toast.error("Failed to submit feedback")
+            toast.error(`Failed to submit feedback: ${error}`)
         }
     }
 

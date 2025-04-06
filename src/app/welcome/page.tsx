@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import React from 'react';
 
 export default function WelcomePage() {
@@ -10,12 +11,12 @@ export default function WelcomePage() {
                 </h1>
 
                 <p className="text-xl md:text-2xl opacity-90">
-                    Skip the coding bootcamp, keep your sanity, and still tell everyone you 'built it yourself'.
+                    Skip the coding bootcamp, keep your sanity, and still tell everyone you &apos;built it yourself&apos;.
                 </p>
 
                 {/* Time Saver Counter */}
                 <div className="bg-blue-100 rounded-lg p-4 inline-block mx-auto">
-                    <div className="text-lg font-medium text-blue-800">Time you'll save:</div>
+                    <div className="text-lg font-medium text-blue-800">Time you&apos;ll save:</div>
                     <div className="text-2xl font-bold text-blue-600">127 hours, 43 minutes</div>
                     <div className="text-sm text-blue-700 opacity-80">(and your sanity)</div>
                 </div>
@@ -32,7 +33,7 @@ export default function WelcomePage() {
                             </div>
                             <div>
                                 <span className="font-bold text-gray-800">Answer 5 Simple Question Sections</span>
-                                <p className="text-sm text-gray-600 mt-1">Tell us about your site's purpose, style, content, and more</p>
+                                <p className="text-sm text-gray-600 mt-1">Tell us about your site&apos;s purpose, style, content, and more</p>
                             </div>
                         </div>
                         <div className="flex items-start space-x-3">
@@ -163,12 +164,12 @@ export default function WelcomePage() {
                     </div>
                 </div>
 
-                <a
+                <Link
                     href="/questionnaire"
                     className="inline-block bg-blue-600 text-white font-bold text-lg py-4 px-8 rounded-full hover:bg-blue-700 transform transition-all hover:scale-105 shadow-lg"
                 >
                     Make Magic Happen →
-                </a>
+                </Link>
 
                 <div className="text-sm text-gray-500 pt-4">
                     No coding skills required. Not even a little bit.
