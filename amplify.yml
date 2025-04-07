@@ -3,8 +3,6 @@ frontend:
   phases:
     preBuild:
       commands:
-        - echo "Copying .env.local to .env.production"
-        - cp .env.local .env.production
         - echo "Creating .env.production file"
         - touch .env.production
         # API Settings
