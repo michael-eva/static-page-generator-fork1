@@ -52,10 +52,12 @@ function SignInContent() {
         setLoading(true)
         setError(null)
 
+        const redirectTo = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`
+                redirectTo: `${redirectTo}/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`
             }
         })
 

@@ -1,0 +1,67 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Creating .env.production file"
+        - touch .env.production
+        # API Settings
+        - echo "API_TITLE=$API_TITLE" >> .env.local
+        - echo "API_VERSION=$API_VERSION" >> .env.local
+        - echo "DEBUG=$DEBUG" >> .env.local
+        - echo "ENVIRONMENT=$ENVIRONMENT" >> .env.local
+
+        # Security
+        - echo "API_KEY_HEADER=$API_KEY_HEADER" >> .env.local
+        - echo "API_KEY=$API_KEY" >> .env.local
+        - echo "ALLOWED_ORIGINS=$ALLOWED_ORIGINS" >> .env.local
+
+        # Rate Limiting
+        - echo "RATE_LIMIT_CALLS=$RATE_LIMIT_CALLS" >> .env.local
+        - echo "RATE_LIMIT_PERIOD=$RATE_LIMIT_PERIOD" >> .env.local
+
+        # Cloudflare
+        - echo "CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN" >> .env.local
+        - echo "CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> .env.local
+
+        # Cloudflare R2
+        - echo "R2_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID" >> .env.local
+        - echo "R2_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY" >> .env.local
+        - echo "R2_BUCKET_NAME=$R2_BUCKET_NAME" >> .env.local
+        - echo "R2_PUBLIC_DOMAIN=$R2_PUBLIC_DOMAIN" >> .env.local
+
+        # AWS S3
+        - echo "CUSTOM_ACCESS_KEY_ID=$CUSTOM_ACCESS_KEY_ID" >> .env.local
+        - echo "CUSTOM_SECRET_ACCESS_KEY=$CUSTOM_SECRET_ACCESS_KEY" >> .env.local
+        - echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >> .env.local
+        - echo "CUSTOM_REGION=$CUSTOM_REGION" >> .env.local
+
+        # Public Variables
+        - echo "NEXT_PUBLIC_API_KEY=$NEXT_PUBLIC_API_KEY" >> .env.local
+        - echo "NEXT_PUBLIC_S3_BUCKET_NAME=$NEXT_PUBLIC_S3_BUCKET_NAME" >> .env.local
+        - echo "NEXT_PUBLIC_CUSTOM_REGION=$NEXT_PUBLIC_CUSTOM_REGION" >> .env.local
+        - echo "NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL" >> .env.local
+
+        # AI APIs
+        - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env.local
+        - echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> .env.local
+
+        # Supabase
+        - echo "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL" >> .env.local
+        - echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY" >> .env.local
+        - echo "SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY" >> .env.local
+
+        # Project Limits
+        - echo "NEXT_PUBLIC_PROJECT_LIMIT=$NEXT_PUBLIC_PROJECT_LIMIT" >> .env.local
+
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*
