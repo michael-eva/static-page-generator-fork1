@@ -13,7 +13,7 @@ if (
   );
   console.error(
     "NEXT_SUPABASE_SERVICE_ROLE_KEY:",
-    !!process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY
+    process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY
   );
 }
 if (!supabaseUrl || !supabaseServiceRoleKey) {
