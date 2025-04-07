@@ -21,7 +21,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validatedData = BusinessInfoSchema.parse(body);
     const { userId } = validatedData;
-    console.log("validatedData", validatedData);
     // Check project limit before proceeding
     const canCreateProject = await checkUserProjectLimit(userId);
     if (!canCreateProject) {

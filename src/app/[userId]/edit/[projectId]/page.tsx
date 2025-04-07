@@ -95,7 +95,7 @@ export default function ProjectEditPage({ params }: PageProps) {
                         <CardContent className="flex-1 p-0">
                             <div className="h-full w-full border rounded-lg overflow-hidden">
                                 <iframe
-                                    src={website.project_url.replace('http://', 'https://')}
+                                    src={website.project_url}
                                     className="w-full h-full"
                                     title="Website Preview"
                                 />
