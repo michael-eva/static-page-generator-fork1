@@ -1,4 +1,4 @@
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, Link as LinkIcon } from "lucide-react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,6 +17,7 @@ import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import toast from "react-hot-toast"
 import Link from "next/link"
+import { copyToClipboard } from "@/lib/utils"
 
 type Props = {
     projectId: string
@@ -37,6 +38,18 @@ export default function WebsiteCard(props: Props) {
     const { project } = props
     const queryClient = useQueryClient()
     const [deletingId, setDeletingId] = useState<string | null>(null)
+
+    const handleCopyPreviewLink = (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (project.preview_url) {
+            copyToClipboard(project.preview_url)
+                .then(() => toast.success('Preview link copied to clipboard!'))
+                .catch(() => toast.error('Failed to copy link'));
+        } else {
+            toast.error('No preview link available');
+        }
+    };
+
     async function handleDeleteProject(siteId: string) {
         try {
             setDeletingId(siteId)
@@ -86,8 +99,25 @@ export default function WebsiteCard(props: Props) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" onClick={(e) => e.preventDefault()}>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>View Project</DropdownMenuItem>
-                        <DropdownMenuItem>View Deployment</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/${props.userId}/edit/${project.id}`)}>View Project</DropdownMenuItem>
+                        <DropdownMenuItem 
+                            onClick={(e) => {
+                                e.preventDefault();
+                                if (project.preview_url) {
+                                    window.open(project.preview_url, '_blank');
+                                }
+                            }}
+                            disabled={!project.preview_url}
+                        >
+                            View Deployment
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                            onClick={handleCopyPreviewLink}
+                            disabled={!project.preview_url}
+                        >
+                            <LinkIcon className="mr-2 h-4 w-4" />
+                            Copy Preview Link
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                             className="text-red-500"
@@ -119,7 +149,9 @@ export default function WebsiteCard(props: Props) {
                 </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-                <Link href={project.project_url} target="_blank" rel="noopener noreferrer"><Button>View Website</Button></Link>
+                <Button asChild>
+                    <Link href={project.project_url} target="_blank" rel="noopener noreferrer">View Website</Link>
+                </Button>
             </CardFooter>
         </Card>
     )
