@@ -54,6 +54,8 @@ export class LandingPageGenerator {
   private anthropic: Anthropic;
 
   constructor(apiKey?: string) {
+    console.log('LandingPageGenerator: Initializing with API key:', !!apiKey || !!process.env.ANTHROPIC_API_KEY);
+    
     this.anthropic = new Anthropic({
       apiKey: apiKey || process.env.ANTHROPIC_API_KEY,
       // Add custom timeout settings
@@ -512,6 +514,14 @@ document.getElementById('subscribeForm').addEventListener('submit', function(e) 
   async generate(
     businessInfo: BusinessInfo
   ): Promise<Array<{ name: string; content: string }>> {
+    console.log('LandingPageGenerator: Starting generation process');
+    console.log('LandingPageGenerator: Business info overview', {
+      name: businessInfo.name,
+      descriptionLength: businessInfo.description?.length,
+      offeringsCount: businessInfo.offerings?.length,
+      imagesCount: businessInfo.images?.length,
+      contactType: businessInfo.contact_preferences?.type
+    });
     const maxRetries = 3;
     let attempt = 0;
     console.log("Starting landing page generation...");
