@@ -11,40 +11,41 @@ function SignInContent() {
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [isSignUp, setIsSignUp] = useState(false)
     const router = useRouter()
-    console.log(process.env.NEXT_PUBLIC_SITE_URL)
     const handleEmailAuth = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
         setError(null)
 
-        if (isSignUp) {
-            // Sign up
-            const { error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    emailRedirectTo: `/${encodeURIComponent(returnUrl)}`
+        // Try sign in first
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        })
+
+        if (signInError) {
+            // If error indicates user doesn't exist, try signing up
+            if (signInError.message.includes('Invalid login credentials')) {
+                const { error: signUpError } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        emailRedirectTo: `/${encodeURIComponent(returnUrl)}`
+                    }
+                })
+
+                if (signUpError) {
+                    setError(signUpError.message)
+                } else {
+                    setError('Please check your email for the confirmation link.')
                 }
-            })
-            if (error) {
-                setError(error.message)
             } else {
-                setError('Please check your email for the confirmation link.')
+                setError(signInError.message)
             }
         } else {
-            // Sign in
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            })
-            if (error) {
-                setError(error.message)
-            } else {
-                router.push(`/${returnUrl}`)
-            }
+            router.push(`/${returnUrl}`)
         }
+
         setLoading(false)
     }
 
@@ -52,7 +53,7 @@ function SignInContent() {
         setLoading(true)
         setError(null)
 
-        const redirectUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/${returnUrl}`;
+        const redirectUrl = `/${returnUrl}`;
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
@@ -67,7 +68,7 @@ function SignInContent() {
 
     return (
         <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-            <h1 className="text-2xl font-bold mb-6">{isSignUp ? 'Sign Up' : 'Sign In'}</h1>
+            <h1 className="text-2xl font-bold mb-6">Sign In / Sign Up</h1>
 
             <form onSubmit={handleEmailAuth} className="space-y-4">
                 <div>
@@ -95,7 +96,7 @@ function SignInContent() {
                     disabled={loading}
                     className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
                 >
-                    {loading ? 'Loading...' : isSignUp ? 'Sign Up with Email' : 'Sign In with Email'}
+                    {loading ? 'Loading...' : 'Continue with Email'}
                 </button>
             </form>
 
@@ -106,16 +107,7 @@ function SignInContent() {
                     className="w-full bg-white border border-gray-300 p-2 rounded hover:bg-gray-50 flex items-center justify-center gap-2"
                 >
                     <FcGoogle className="text-xl" />
-                    {isSignUp ? 'Sign Up' : 'Sign In'} with Google
-                </button>
-            </div>
-
-            <div className="mt-4 text-center">
-                <button
-                    onClick={() => setIsSignUp(!isSignUp)}
-                    className="text-blue-500 hover:text-blue-600"
-                >
-                    {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+                    Sign In with Google
                 </button>
             </div>
 
