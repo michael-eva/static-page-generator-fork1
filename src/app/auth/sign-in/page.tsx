@@ -118,7 +118,11 @@ function SignInContent() {
                     {loading ? 'Loading...' : 'Continue with Email'}
                 </button>
             </form>
-
+            <div className="flex items-center justify-center gap-2 mt-4">
+                <div className="h-[1px] w-full bg-gray-300"></div>
+                <p className="text-gray-500">or</p>
+                <div className="h-[1px] w-full bg-gray-300"></div>
+            </div>
             <div className="mt-4">
                 <button
                     onClick={handleGoogleSignIn}
