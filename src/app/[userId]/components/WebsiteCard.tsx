@@ -46,6 +46,7 @@ export default function WebsiteCard(props: Props) {
             })
             if (response.ok) {
                 await queryClient.invalidateQueries({ queryKey: ["websites", props.userId] });
+                await queryClient.invalidateQueries({ queryKey: ["projectLimits", props.userId] });
                 toast.success('Project deleted successfully')
             } else {
                 toast.error('Failed to delete project')
