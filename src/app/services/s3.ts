@@ -24,19 +24,11 @@ export class S3Service {
   constructor() {
     this.region = process.env.CUSTOM_REGION || "us-east-2";
     this.bucketName = process.env.S3_BUCKET_NAME!;
-    this.websiteEndpoint = `http://${this.bucketName}.s3-website.${this.region}.amazonaws.com`;
+    this.websiteEndpoint = `https://${this.bucketName}.s3.${this.region}.amazonaws.com`;
 
     if (!this.bucketName) {
       throw new Error("S3_BUCKET_NAME environment variable is required");
     }
-
-    console.log('S3Service: Initializing with config', { 
-      region: this.region,
-      bucketName: this.bucketName,
-      hasAccessKey: !!process.env.CUSTOM_ACCESS_KEY_ID,
-      hasSecretKey: !!process.env.CUSTOM_SECRET_ACCESS_KEY,
-      endpoint: `https://s3.${this.region}.amazonaws.com`
-    });
 
     this.s3 = new S3Client({
       region: this.region,
@@ -50,8 +42,6 @@ export class S3Service {
   }
 
   private async ensurePublicAccess() {
-    console.log('S3Service: Starting ensurePublicAccess');
-    
     // Set bucket policy
     const bucketPolicy = {
       Version: "2012-10-17",
@@ -83,29 +73,38 @@ export class S3Service {
     };
 
     try {
-      console.log('S3Service: Setting bucket policy');
-      console.log('S3Service: Bucket policy:', JSON.stringify(bucketPolicy, null, 2));
-      
+      console.log("S3Service: Setting bucket policy");
+      console.log(
+        "S3Service: Bucket policy:",
+        JSON.stringify(bucketPolicy, null, 2)
+      );
+
       await this.s3.send(
         new PutBucketPolicyCommand({
           Bucket: this.bucketName,
           Policy: JSON.stringify(bucketPolicy),
         })
       );
-      console.log('S3Service: Bucket policy set successfully');
+      console.log("S3Service: Bucket policy set successfully");
 
-      console.log('S3Service: Setting CORS configuration');
+      console.log("S3Service: Setting CORS configuration");
       await this.s3.send(
         new PutBucketCorsCommand({
           Bucket: this.bucketName,
           CORSConfiguration: corsConfiguration,
         })
       );
-      console.log('S3Service: CORS configuration set successfully');
+      console.log("S3Service: CORS configuration set successfully");
     } catch (error) {
-      console.error('S3Service: Error in ensurePublicAccess:');
-      console.error('S3Service: Error details:', JSON.stringify(error, null, 2));
-      console.error('S3Service: Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      console.error("S3Service: Error in ensurePublicAccess:");
+      console.error(
+        "S3Service: Error details:",
+        JSON.stringify(error, null, 2)
+      );
+      console.error(
+        "S3Service: Error stack:",
+        error instanceof Error ? error.stack : "No stack trace"
+      );
       throw error;
     }
   }
@@ -114,14 +113,17 @@ export class S3Service {
     siteId: string,
     files: DeploymentFile[]
   ): Promise<{ url: string }> {
-    console.log('S3Service: Starting deploy operation', { siteId, fileCount: files.length });
-    
-    try {
-      console.log('S3Service: Ensuring public access');
-      await this.ensurePublicAccess();
-      console.log('S3Service: Public access ensured successfully');
+    console.log("S3Service: Starting deploy operation", {
+      siteId,
+      fileCount: files.length,
+    });
 
-      console.log('S3Service: Creating upload promises');
+    try {
+      console.log("S3Service: Ensuring public access");
+      await this.ensurePublicAccess();
+      console.log("S3Service: Public access ensured successfully");
+
+      console.log("S3Service: Creating upload promises");
       const uploadPromises = files.map((file) => {
         const key = `${siteId}/${file.name}`;
 
@@ -133,27 +135,36 @@ export class S3Service {
         });
 
         console.log(`S3Service: Preparing to upload ${key}`);
-        return this.s3.send(command).then(result => {
-          console.log(`S3Service: Successfully uploaded ${key}`);
-          return result;
-        }).catch(error => {
-          console.error(`S3Service: Error uploading ${key}:`, error);
-          throw error;
-        });
+        return this.s3
+          .send(command)
+          .then((result) => {
+            console.log(`S3Service: Successfully uploaded ${key}`);
+            return result;
+          })
+          .catch((error) => {
+            console.error(`S3Service: Error uploading ${key}:`, error);
+            throw error;
+          });
       });
 
-      console.log('S3Service: Starting all uploads');
+      console.log("S3Service: Starting all uploads");
       await Promise.all(uploadPromises);
-      console.log('S3Service: All uploads completed successfully');
+      console.log("S3Service: All uploads completed successfully");
 
-      console.log('S3Service: Deployment completed');
+      console.log("S3Service: Deployment completed");
       return {
         url: `${this.websiteEndpoint}/${siteId}/index.html`,
       };
     } catch (error) {
-      console.error('S3Service: Error in deploy operation:', error);
-      console.error('S3Service: Error details:', JSON.stringify(error, null, 2));
-      console.error('S3Service: Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      console.error("S3Service: Error in deploy operation:", error);
+      console.error(
+        "S3Service: Error details:",
+        JSON.stringify(error, null, 2)
+      );
+      console.error(
+        "S3Service: Error stack:",
+        error instanceof Error ? error.stack : "No stack trace"
+      );
       throw error;
     }
   }
@@ -172,7 +183,10 @@ export class S3Service {
       console.log(`S3Service: Deployment status for ${siteId} is completed`);
       return "completed";
     } catch (error) {
-      console.log(`S3Service: Deployment status for ${siteId} is not_found`, error);
+      console.log(
+        `S3Service: Deployment status for ${siteId} is not_found`,
+        error
+      );
       return "not_found";
     }
   }
@@ -189,7 +203,9 @@ export class S3Service {
       );
 
       if (listResponse.Contents && listResponse.Contents.length > 0) {
-        console.log(`S3Service: Found ${listResponse.Contents.length} objects to delete`);
+        console.log(
+          `S3Service: Found ${listResponse.Contents.length} objects to delete`
+        );
         // Delete all objects found
         await this.s3.send(
           new DeleteObjectsCommand({
@@ -199,13 +215,18 @@ export class S3Service {
             },
           })
         );
-        console.log(`S3Service: Successfully deleted all objects for ${siteId}`);
+        console.log(
+          `S3Service: Successfully deleted all objects for ${siteId}`
+        );
       } else {
         console.log(`S3Service: No objects found for site ${siteId}`);
       }
     } catch (error) {
       console.error(`S3Service: Failed to delete site ${siteId}:`, error);
-      console.error('S3Service: Error details:', JSON.stringify(error, null, 2));
+      console.error(
+        "S3Service: Error details:",
+        JSON.stringify(error, null, 2)
+      );
       throw new Error("Failed to delete site");
     }
   }
@@ -222,11 +243,11 @@ export class S3Service {
   }> {
     console.log(`S3Service: Uploading asset ${fileName} for site ${siteId}`);
     const key = `${siteId}/assets/${type}s/${fileName}`;
-    
+
     try {
-      console.log('S3Service: Getting image metadata');
+      console.log("S3Service: Getting image metadata");
       const metadata = await this.getImageMetadata(buffer);
-      console.log('S3Service: Image metadata', metadata);
+      console.log("S3Service: Image metadata", metadata);
 
       console.log(`S3Service: Uploading to ${key}`);
       await this.s3.send(
@@ -249,7 +270,10 @@ export class S3Service {
       return { url, metadata };
     } catch (error) {
       console.error(`S3Service: Upload failed for ${fileName}:`, error);
-      console.error('S3Service: Error details:', JSON.stringify(error, null, 2));
+      console.error(
+        "S3Service: Error details:",
+        JSON.stringify(error, null, 2)
+      );
       throw error;
     }
   }
@@ -278,7 +302,10 @@ export class S3Service {
       return url;
     } catch (error) {
       console.error(`S3Service: Preview upload failed for ${siteId}:`, error);
-      console.error('S3Service: Error details:', JSON.stringify(error, null, 2));
+      console.error(
+        "S3Service: Error details:",
+        JSON.stringify(error, null, 2)
+      );
       throw new Error("Failed to upload preview image");
     }
   }
@@ -294,8 +321,14 @@ export class S3Service {
       );
       console.log(`S3Service: Preview deleted successfully for ${siteId}`);
     } catch (error) {
-      console.error(`S3Service: Failed to delete preview for ${siteId}:`, error);
-      console.error('S3Service: Error details:', JSON.stringify(error, null, 2));
+      console.error(
+        `S3Service: Failed to delete preview for ${siteId}:`,
+        error
+      );
+      console.error(
+        "S3Service: Error details:",
+        JSON.stringify(error, null, 2)
+      );
       throw new Error("Failed to delete preview");
     }
   }
@@ -306,7 +339,7 @@ export class S3Service {
     aspectRatio: number;
   }> {
     try {
-      console.log('S3Service: Processing image metadata');
+      console.log("S3Service: Processing image metadata");
       // Use sharp to get image dimensions
       const sharp = (await import("sharp")).default;
       const image = sharp(Buffer.from(buffer));
@@ -321,11 +354,14 @@ export class S3Service {
         height,
         aspectRatio: width / height,
       };
-      console.log('S3Service: Image metadata processed', metadata);
+      console.log("S3Service: Image metadata processed", metadata);
       return metadata;
     } catch (error) {
-      console.error('S3Service: Error getting image metadata:', error);
-      console.error('S3Service: Error details:', JSON.stringify(error, null, 2));
+      console.error("S3Service: Error getting image metadata:", error);
+      console.error(
+        "S3Service: Error details:",
+        JSON.stringify(error, null, 2)
+      );
       throw error;
     }
   }
