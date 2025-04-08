@@ -2,7 +2,7 @@
 import { supabase } from "@/lib/supabase/client/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, Suspense } from "react"
-// import { FcGoogle } from 'react-icons/fc'
+import { FcGoogle } from 'react-icons/fc'
 
 function SignInContent() {
     const searchParams = useSearchParams()
@@ -48,22 +48,22 @@ function SignInContent() {
         setLoading(false)
     }
 
-    // const handleGoogleSignIn = async () => {
-    //     setLoading(true)
-    //     setError(null)
+    const handleGoogleSignIn = async () => {
+        setLoading(true)
+        setError(null)
 
-    //     const redirectUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/${returnUrl}`;
-    //     const { error } = await supabase.auth.signInWithOAuth({
-    //         provider: 'google',
-    //         options: {
-    //             redirectTo: redirectUrl,
-    //         }
-    //     })
-    //     if (error) {
-    //         setError(error.message)
-    //         setLoading(false)
-    //     }
-    // }
+        const redirectUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/${returnUrl}`;
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: redirectUrl,
+            }
+        })
+        if (error) {
+            setError(error.message)
+            setLoading(false)
+        }
+    }
 
     return (
         <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
@@ -99,7 +99,7 @@ function SignInContent() {
                 </button>
             </form>
 
-            {/* <div className="mt-4">
+            <div className="mt-4">
                 <button
                     onClick={handleGoogleSignIn}
                     disabled={loading}
@@ -108,7 +108,7 @@ function SignInContent() {
                     <FcGoogle className="text-xl" />
                     {isSignUp ? 'Sign Up' : 'Sign In'} with Google
                 </button>
-            </div> */}
+            </div>
 
             <div className="mt-4 text-center">
                 <button
