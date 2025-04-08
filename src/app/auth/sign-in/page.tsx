@@ -1,13 +1,25 @@
 'use client'
 import { supabase } from "@/lib/supabase/client/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState, Suspense } from "react"
+import { useState, Suspense, useEffect } from "react"
 import { FcGoogle } from 'react-icons/fc'
+import { persistFormData } from '@/lib/formDataPersistence'
 
 function SignInContent() {
     const searchParams = useSearchParams()
     const returnUrl = searchParams.get('returnUrl') || 'questionnaire'
     const [email, setEmail] = useState('')
+
+    // Save questionnaire data for persistence across auth flow
+    useEffect(() => {
+        if (typeof window !== 'undefined' && returnUrl === 'questionnaire') {
+            const websiteBuilderData = localStorage.getItem('websiteBuilder')
+            if (websiteBuilderData) {
+                // Persist form data in multiple storage mechanisms
+                persistFormData(websiteBuilderData)
+            }
+        }
+    }, [returnUrl])
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -26,18 +38,25 @@ function SignInContent() {
         if (signInError) {
             // If error indicates user doesn't exist, try signing up
             if (signInError.message.includes('Invalid login credentials')) {
+                // First ensure we persist form data associated with this email
+                const websiteBuilderData = localStorage.getItem('websiteBuilder')
+                if (websiteBuilderData) {
+                    persistFormData(websiteBuilderData, email)
+                }
+
                 const { error: signUpError } = await supabase.auth.signUp({
                     email,
                     password,
                     options: {
-                        emailRedirectTo: `/${encodeURIComponent(returnUrl)}`
+                        emailRedirectTo: `${window.location.origin}/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`
                     }
                 })
 
                 if (signUpError) {
                     setError(signUpError.message)
                 } else {
-                    setError('Please check your email for the confirmation link.')
+                    // Remove email confirmation message and navigate directly
+                    router.push(`/${returnUrl}`)
                 }
             } else {
                 setError(signInError.message)

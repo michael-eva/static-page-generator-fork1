@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import React, { useState, useEffect, useRef } from 'react'
 import { useDialog } from '@/hooks/use-dialog'
 import { CustomDialog } from '@/components/dialog'
+import { recoverFormData, clearFormData } from '@/lib/formDataPersistence'
 import { WebsiteBuilderContent } from './WebsiteBuilderContent'
 import { FormProgressTracker } from './FormProgressTracker'
 import { useForm } from "react-hook-form";
@@ -141,11 +142,29 @@ export default function WebsiteBuilderForm() {
     // All useEffect hooks
     useEffect(() => {
         setIsClient(true);
-        const savedData = localStorage.getItem('websiteBuilder');
+        
+        // Check for data in localStorage first
+        let savedData = localStorage.getItem('websiteBuilder');
+        
+        // If no data in localStorage, try to recover from backup mechanisms
+        if (!savedData) {
+            savedData = recoverFormData();
+            if (savedData) {
+                // If recovered, store in localStorage for future use
+                localStorage.setItem('websiteBuilder', savedData);
+                // Clean up persisted data
+                clearFormData();
+            }
+        }
+        
         if (savedData) {
-            const { formData, currentTab: savedTab } = JSON.parse(savedData);
-            form.reset(formData);
-            setCurrentTab(savedTab);
+            try {
+                const { formData, currentTab: savedTab } = JSON.parse(savedData);
+                form.reset(formData);
+                setCurrentTab(savedTab);
+            } catch (error) {
+                console.error('Error parsing saved form data:', error);
+            }
         }
     }, [form]);
 
