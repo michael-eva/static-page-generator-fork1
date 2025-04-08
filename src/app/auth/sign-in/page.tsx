@@ -2,7 +2,7 @@
 import { supabase } from "@/lib/supabase/client/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, Suspense } from "react"
-import { FcGoogle } from 'react-icons/fc'
+// import { FcGoogle } from 'react-icons/fc'
 
 function SignInContent() {
     const searchParams = useSearchParams()
