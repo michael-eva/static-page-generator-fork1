@@ -1,0 +1,26 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Shape - Rounded Square -->
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#3B82F6" />
+  
+  <!-- Window Frame -->
+  <rect x="12" y="12" width="40" height="40" rx="6" fill="white" />
+  
+  <!-- Window Controls -->
+  <circle cx="19" cy="19" r="2.5" fill="#FC8181" />
+  <circle cx="27" cy="19" r="2.5" fill="#F6E05E" />
+  <circle cx="35" cy="19" r="2.5" fill="#68D391" />
+  
+  <!-- Magic Wand -->
+  <g transform="translate(20, 28) rotate(45)">
+    <!-- Wand Handle -->
+    <rect x="-2" y="0" width="4" height="16" rx="2" fill="#4B5563" />
+    
+    <!-- Wand Star -->
+    <path d="M0,-10 L2,-4 L8,-2 L2,0 L0,6 L-2,0 L-8,-2 L-2,-4 Z" fill="#F59E0B" />
+    
+    <!-- Magic Sparkles -->
+    <circle cx="8" cy="6" r="1.5" fill="#F59E0B" />
+    <circle cx="-6" cy="4" r="1" fill="#F59E0B" />
+    <circle cx="5" cy="-5" r="1" fill="#F59E0B" />
+  </g>
+</svg>
