@@ -1,8 +1,8 @@
-import { TabValue } from "../page";
+
 import { CheckCircle } from "lucide-react";
-import { FormSchema } from "../page";
 import { UseFormReturn } from "react-hook-form";
 import React from "react";
+import { FormSchema, TabValue } from "./Form";
 
 interface FormProgressTrackerProps {
   form: UseFormReturn<FormSchema>;

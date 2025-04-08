@@ -10,7 +10,7 @@ import ImagePreview from './ImagePreview'
 import colorPalettes from '@/data/color-palettes.json'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { UseFormReturn } from "react-hook-form"
-import { FormSchema, TabValue } from "../page"
+import { FormSchema, TabValue } from "./Form"
 import ContactCard from "./ContactCard"
 
 interface WebsiteBuilderContentProps {
