@@ -1,6 +1,7 @@
+import { DeleteSite } from "@/app/services/db"
 import { S3Service } from "@/app/services/s3"
 import { NextResponse } from "next/server"
-import DeleteSite from "@/app/services/db"
+
 export async function POST(request: Request) {
     try {
         const data = await request.json()
