@@ -4,7 +4,7 @@ import { S3Service, DeploymentFile } from "../../services/s3";
 // import { checkRateLimit } from "../../core/security";
 import { supabase } from "@/lib/supabase/server/supsbase";
 import { PreviewService } from "@/app/services/preview";
-import { BusinessInfoSchema } from "@/types/business";
+import { BusinessInfoSchema } from "../../../../types/business";
 import { checkUserProjectLimit } from "./helper";
 import { LandingPageGenerator } from "@/app/services/claude-generator";
 

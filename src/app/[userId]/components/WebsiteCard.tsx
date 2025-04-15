@@ -37,6 +37,7 @@ export default function WebsiteCard(props: Props) {
     const { project } = props
     const queryClient = useQueryClient()
     const [deletingId, setDeletingId] = useState<string | null>(null)
+
     async function handleDeleteProject(siteId: string) {
         try {
             setDeletingId(siteId)
@@ -121,6 +122,29 @@ export default function WebsiteCard(props: Props) {
             </CardContent>
             <CardFooter className="flex justify-between">
                 <Link href={project.project_url} target="_blank" rel="noopener noreferrer"><Button>View Website</Button></Link>
+                <Button onClick={async () => {
+                    try {
+                        const response = await fetch('/api/cloudfront', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                userId: props.userId,
+                                siteId: project.site_id,
+                            }),
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to create distribution');
+                        }
+
+                        const data = await response.json();
+                        console.log('Distribution created:', data);
+                    } catch (error) {
+                        console.error('Error:', error);
+                    }
+                }}>Connect Domain</Button>
             </CardFooter>
         </Card>
     )
