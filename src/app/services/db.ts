@@ -74,6 +74,7 @@ export async function InsertDomainSetup(params: {
     nameservers: nameservers,
     validation_records: validationRecords,
     site_id: siteId,
+    completed: true,
   });
 
   if (error) {
