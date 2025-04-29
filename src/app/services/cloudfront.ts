@@ -10,8 +10,7 @@ import {
   MinimumProtocolVersion,
   CreateCloudFrontOriginAccessIdentityCommand,
 } from "@aws-sdk/client-cloudfront";
-import { ACMClient, RequestCertificateCommand } from "@aws-sdk/client-acm";
-import { S3Client, PutBucketPolicyCommand } from "@aws-sdk/client-s3";
+import { ACMClient, ListCertificatesCommand } from "@aws-sdk/client-acm";
 
 const region = process.env.CUSTOM_REGION;
 
@@ -22,25 +21,13 @@ const cloudfrontClient = new CloudFrontClient({
     secretAccessKey: process.env.CUSTOM_SECRET_ACCESS_KEY ?? "",
   },
 });
-const acmClient = new ACMClient({
-  region,
-  credentials: {
-    accessKeyId: process.env.CUSTOM_ACCESS_KEY_ID ?? "",
-    secretAccessKey: process.env.CUSTOM_SECRET_ACCESS_KEY ?? "",
-  },
-});
-
-const s3Client = new S3Client({
-  region,
-  credentials: {
-    accessKeyId: process.env.CUSTOM_ACCESS_KEY_ID ?? "",
-    secretAccessKey: process.env.CUSTOM_SECRET_ACCESS_KEY ?? "",
-  },
-});
 
 interface CreateDistributionParams {
   userId: string;
   siteId: string;
+  certificateArn?: string;
+  domainName?: string;
+  domainNames?: string[];
 }
 
 export class CloudFrontService {
@@ -50,16 +37,40 @@ export class CloudFrontService {
   static async createDistribution({
     userId,
     siteId,
+    certificateArn,
+    domainName,
+    domainNames,
   }: CreateDistributionParams) {
     try {
+      console.log("[CloudFront] Starting distribution creation with params:", {
+        userId,
+        siteId,
+        certificateArn,
+        domainName,
+        domainNames,
+      });
+
       // Setup OAI and bucket policy
+      console.log("[CloudFront] Setting up Origin Access Identity");
       const oaiId = await this.setupOriginAccessIdentity(
         `default-${userId}`,
         userId
       );
+      console.log("[CloudFront] Got OAI ID:", oaiId);
 
-      // First, request an SSL certificate for the domain
-      //   const certificateArn = await this.requestCertificate(domainName);
+      // Determine the domain names to use
+      let aliasItems: string[] = [];
+      let aliasQuantity = 0;
+
+      if (domainNames && domainNames.length > 0) {
+        // Use the array of domain names if provided
+        aliasItems = domainNames;
+        aliasQuantity = domainNames.length;
+      } else if (domainName) {
+        // Fallback to single domain name for backward compatibility
+        aliasItems = [domainName];
+        aliasQuantity = 1;
+      }
 
       // Create the distribution configuration
       const distributionConfig = {
@@ -90,46 +101,51 @@ export class CloudFrontService {
           ViewerProtocolPolicy: ViewerProtocolPolicy.redirect_to_https,
           MinTTL: 0,
         },
-        ViewerCertificate: {
-          CloudFrontDefaultCertificate: true,
-          SSLSupportMethod: SSLSupportMethod.sni_only,
-          MinimumProtocolVersion: MinimumProtocolVersion.TLSv1_2_2021,
-        },
-        PriceClass: PriceClass.PriceClass_100, // Use all edge locations
+        ViewerCertificate: certificateArn
+          ? {
+              ACMCertificateArn: certificateArn,
+              SSLSupportMethod: SSLSupportMethod.sni_only,
+              MinimumProtocolVersion: MinimumProtocolVersion.TLSv1_2_2021,
+            }
+          : {
+              CloudFrontDefaultCertificate: true,
+              SSLSupportMethod: SSLSupportMethod.sni_only,
+              MinimumProtocolVersion: MinimumProtocolVersion.TLSv1_2_2021,
+            },
+        // Updated Aliases configuration to handle multiple domains
+        Aliases:
+          aliasQuantity > 0
+            ? { Quantity: aliasQuantity, Items: aliasItems }
+            : undefined,
+        PriceClass: PriceClass.PriceClass_100,
         Enabled: true,
+        HttpVersion: "http2" as const,
+        IsIPV6Enabled: true,
       };
+
+      console.log(
+        "[CloudFront] Distribution config:",
+        JSON.stringify(distributionConfig, null, 2)
+      );
 
       const command = new CreateDistributionCommand({
         DistributionConfig: distributionConfig,
       });
 
+      console.log("[CloudFront] Sending create distribution command");
       const response = await cloudfrontClient.send(command);
+      console.log("[CloudFront] Create distribution response:", response);
+
       return response.Distribution;
-    } catch (error) {
-      console.error("Error creating CloudFront distribution:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Requests an SSL certificate for the domain
-   */
-  private static async requestCertificate(domainName: string) {
-    try {
-      const command = new RequestCertificateCommand({
-        DomainName: domainName,
-        ValidationMethod: "DNS",
-        SubjectAlternativeNames: [`www.${domainName}`],
+    } catch (error: any) {
+      console.error("[CloudFront] Error creating distribution:", {
+        error: error?.message || "Unknown error",
+        code: error?.Code,
+        stack: error?.stack,
       });
-
-      const response = await acmClient.send(command);
-      return response.CertificateArn;
-    } catch (error) {
-      console.error("Error requesting SSL certificate:", error);
       throw error;
     }
   }
-
   /**
    * Gets the status of a CloudFront distribution
    */
@@ -180,39 +196,67 @@ export class CloudFrontService {
       });
       const oaiResponse = await cloudfrontClient.send(oaiCommand);
       const oaiId = oaiResponse.CloudFrontOriginAccessIdentity?.Id;
-      const oaiArn =
-        oaiResponse.CloudFrontOriginAccessIdentity?.S3CanonicalUserId;
 
-      if (!oaiId || !oaiArn) {
+      if (!oaiId) {
         throw new Error("Failed to create Origin Access Identity");
       }
-
-      // Update S3 bucket policy
-      const bucketPolicy = {
-        Version: "2012-10-17",
-        Statement: [
-          {
-            Sid: "AllowCloudFrontAccess",
-            Effect: "Allow",
-            Principal: {
-              CanonicalUser: oaiArn,
-            },
-            Action: "s3:GetObject",
-            Resource: `arn:aws:s3:::${process.env.S3_BUCKET_NAME}/*`,
-          },
-        ],
-      };
-
-      const policyCommand = new PutBucketPolicyCommand({
-        Bucket: process.env.S3_BUCKET_NAME,
-        Policy: JSON.stringify(bucketPolicy),
-      });
-
-      await s3Client.send(policyCommand);
 
       return oaiId;
     } catch (error) {
       console.error("Error setting up Origin Access Identity:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets the certificate ARN for a domain from ACM
+   */
+  static async getCertificateArn(
+    domainName: string
+  ): Promise<string | undefined> {
+    try {
+      const acmClient = new ACMClient({
+        region: "us-east-1", // ACM certificates must be in us-east-1 for CloudFront
+        credentials: {
+          accessKeyId: process.env.CUSTOM_ACCESS_KEY_ID ?? "",
+          secretAccessKey: process.env.CUSTOM_SECRET_ACCESS_KEY ?? "",
+        },
+      });
+
+      const command = new ListCertificatesCommand({});
+      const response = await acmClient.send(command);
+
+      if (!response.CertificateSummaryList) {
+        return undefined;
+      }
+
+      // Find the certificate that matches the domain
+      const certificate = response.CertificateSummaryList.find(
+        (cert) =>
+          cert.DomainName === domainName ||
+          cert.SubjectAlternativeNameSummaries?.includes(domainName)
+      );
+
+      return certificate?.CertificateArn;
+    } catch (error) {
+      console.error("Error getting certificate ARN:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets the domain name of a CloudFront distribution
+   */
+  static async getDistributionDomain(distributionId: string) {
+    try {
+      const command = new GetDistributionCommand({
+        Id: distributionId,
+      });
+
+      const response = await cloudfrontClient.send(command);
+      return response.Distribution?.DomainName;
+    } catch (error) {
+      console.error("Error getting distribution domain:", error);
       throw error;
     }
   }

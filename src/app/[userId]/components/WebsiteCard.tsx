@@ -29,6 +29,8 @@ type Props = {
         hosting_status: string
         updated_at: string
         project_url: string
+        cloudfront_domain: string
+        domain_connected: boolean
     }
 }
 
@@ -64,7 +66,7 @@ export default function WebsiteCard(props: Props) {
             onClick={(e) => {
                 // Only navigate if the click target is the card or its non-dropdown children
                 if (!e.defaultPrevented) {
-                    router.push(`/${props.userId}/edit/${project.id}`)
+                    router.push(`/${props.userId}/edit/${project.site_id}`)
                 }
             }}
         >
@@ -73,12 +75,23 @@ export default function WebsiteCard(props: Props) {
                     src={project.preview_url || "/placeholder.svg"}
                     alt={project.name}
                     fill
-                    className="object-cover"
+                    className="object-cover hover:scale-105 transition-transform duration-300"
                     priority
                 />
             </div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xl font-bold">{project.name}</CardTitle>
+                <div className="flex flex-col">
+                    <CardTitle className="text-xl font-medium tracking-tight">{project.name}</CardTitle>
+                    <span className="text-sm text-muted-foreground ml-auto">
+                        Updated {new Date(project.updated_at).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: 'numeric',
+                        })}
+                    </span>
+                </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -103,48 +116,51 @@ export default function WebsiteCard(props: Props) {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+
             </CardHeader>
             <CardContent>
-                <div className="flex items-center gap-4">
-                    <Badge variant={project.hosting_status === "Live" ? "default" : "secondary"} className="rounded-md">
+                <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary" className="rounded-full px-3 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                        <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                         {project.hosting_status}
                     </Badge>
-                    <span className="text-sm text-muted-foreground">
-                        Updated {new Date(project.updated_at).toLocaleString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: 'numeric',
-                        })}
-                    </span>
+                    {project.cloudfront_domain ? (
+                        <Badge variant="secondary" className="rounded-full px-3 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                            <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M13 10V3L4 14H11V21L20 10H13Z" fill="currentColor" />
+                            </svg>
+                            CDN Connected
+                        </Badge>
+                    ) : (
+                        <Badge variant="outline" className="rounded-full px-3 text-muted-foreground border-muted">
+                            <svg className="w-3 h-3 mr-1 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M13 10V3L4 14H11V21L20 10H13Z" fill="currentColor" fillOpacity="0.5" />
+                            </svg>
+                            CDN Not Connected
+                        </Badge>
+                    )}
+                    {project.domain_connected ? (
+                        <Badge variant="secondary" className="rounded-full px-3 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                            <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                            Domain Connected
+                        </Badge>
+                    ) : (
+                        <Badge variant="outline" className="rounded-full px-3 text-muted-foreground border-muted">
+                            <svg className="w-3 h-3 mr-1 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                            Domain Not Connected
+                        </Badge>
+                    )}
                 </div>
             </CardContent>
             <CardFooter className="flex justify-between">
                 <Link href={project.project_url} target="_blank" rel="noopener noreferrer"><Button>View Website</Button></Link>
-                <Button onClick={async () => {
-                    try {
-                        const response = await fetch('/api/cloudfront', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                userId: props.userId,
-                                siteId: project.site_id,
-                            }),
-                        });
-
-                        if (!response.ok) {
-                            throw new Error('Failed to create distribution');
-                        }
-
-                        const data = await response.json();
-                        console.log('Distribution created:', data);
-                    } catch (error) {
-                        console.error('Error:', error);
-                    }
-                }}>Connect Domain</Button>
+                <Link href={`/${props.userId}/edit/${project.id}/domain`} rel="noopener noreferrer"><Button>Connect Domain</Button></Link>
             </CardFooter>
         </Card>
     )

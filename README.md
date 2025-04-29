@@ -16,7 +16,7 @@ Notes:
 CloudFront Distribution Setup
 [X] Create a CloudFront distribution for each user's static site
 [X] Configure the distribution to use the S3 bucket as the origin
-[ ] Set up SSL certificate handling (we'll need this for custom domains)
+[X] Set up SSL certificate handling (we'll need this for custom domains)
 
 User Interface for Domain Configuration
 [ ] Create a section in your app where users can:

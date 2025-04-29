@@ -15,6 +15,7 @@ export async function POST(request: Request) {
         }
         const s3 = new S3Service()
         await s3.deleteSite(siteId)
+        //TODO: Delete CloudFront distribution
         await DeleteSite({ siteId })
         return NextResponse.json({ message: "Site deleted" })
     } catch (error) {
