@@ -30,7 +30,10 @@ type Props = {
         updated_at: string
         project_url: string
         cloudfront_domain: string
-        domain_connected: boolean
+        domain_setups: {
+            completed: boolean,
+            domain_name: string,
+        }[]
     }
 }
 
@@ -62,15 +65,15 @@ export default function WebsiteCard(props: Props) {
     return (
         <Card
             key={props.projectId}
-            className="overflow-hidden cursor-pointer"
-            onClick={(e) => {
-                // Only navigate if the click target is the card or its non-dropdown children
-                if (!e.defaultPrevented) {
-                    router.push(`/${props.userId}/edit/${project.site_id}`)
-                }
-            }}
+            className="overflow-hidden"
         >
-            <div className="aspect-video relative">
+            <div className="aspect-video relative cursor-pointer"
+                onClick={(e) => {
+                    // Only navigate if the click target is the card or its non-dropdown children
+                    if (!e.defaultPrevented) {
+                        router.push(`/${props.userId}/edit/${project.site_id}`)
+                    }
+                }}>
                 <Image
                     src={project.preview_url || "/placeholder.svg"}
                     alt={project.name}
@@ -141,7 +144,7 @@ export default function WebsiteCard(props: Props) {
                             CDN Not Connected
                         </Badge>
                     )}
-                    {project.domain_connected ? (
+                    {project.domain_setups[0]?.completed ? (
                         <Badge variant="secondary" className="rounded-full px-3 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
                             <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -159,8 +162,25 @@ export default function WebsiteCard(props: Props) {
                 </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-                <Link href={project.project_url} target="_blank" rel="noopener noreferrer"><Button>View Website</Button></Link>
-                <Link href={`/${props.userId}/edit/${project.id}/domain`} rel="noopener noreferrer"><Button>Connect Domain</Button></Link>
+                <div className="flex gap-2">
+                    <Link href={project.project_url} target="_blank" rel="noopener noreferrer">
+                        <Button>View Website</Button>
+                    </Link>
+                    {project.domain_setups[0]?.completed && (
+                        <Link
+                            href={`https://${project.domain_setups[0].domain_name}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <Button variant="outline">Visit Domain</Button>
+                        </Link>
+                    )}
+                </div>
+                {!project.domain_setups[0]?.completed && (
+                    <Link href={`/${props.userId}/edit/${project.id}/domain`} rel="noopener noreferrer">
+                        <Button>Connect Domain</Button>
+                    </Link>
+                )}
             </CardFooter>
         </Card>
     )
