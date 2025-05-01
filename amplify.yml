@@ -1,0 +1,67 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Creating .env.production file"
+        - touch .env.production
+        # API Settings
+        - echo "API_TITLE=$API_TITLE" >> .env.production
+        - echo "API_VERSION=$API_VERSION" >> .env.production
+        - echo "DEBUG=$DEBUG" >> .env.production
+        - echo "ENVIRONMENT=$ENVIRONMENT" >> .env.production
+
+        # Security
+        - echo "API_KEY_HEADER=$API_KEY_HEADER" >> .env.production
+        - echo "API_KEY=$API_KEY" >> .env.production
+        - echo "ALLOWED_ORIGINS=$ALLOWED_ORIGINS" >> .env.production
+
+        # Rate Limiting
+        - echo "RATE_LIMIT_CALLS=$RATE_LIMIT_CALLS" >> .env.production
+        - echo "RATE_LIMIT_PERIOD=$RATE_LIMIT_PERIOD" >> .env.production
+
+        # Cloudflare
+        - echo "CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN" >> .env.production
+        - echo "CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> .env.production
+
+        # Cloudflare R2
+        - echo "R2_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID" >> .env.production
+        - echo "R2_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY" >> .env.production
+        - echo "R2_BUCKET_NAME=$R2_BUCKET_NAME" >> .env.production
+        - echo "R2_PUBLIC_DOMAIN=$R2_PUBLIC_DOMAIN" >> .env.production
+
+        # AWS S3
+        - echo "CUSTOM_ACCESS_KEY_ID=$CUSTOM_ACCESS_KEY_ID" >> .env.production
+        - echo "CUSTOM_SECRET_ACCESS_KEY=$CUSTOM_SECRET_ACCESS_KEY" >> .env.production
+        - echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >> .env.production
+        - echo "CUSTOM_REGION=$CUSTOM_REGION" >> .env.production
+
+        # Public Variables
+        - echo "NEXT_PUBLIC_API_KEY=$NEXT_PUBLIC_API_KEY" >> .env.production
+        - echo "NEXT_PUBLIC_S3_BUCKET_NAME=$NEXT_PUBLIC_S3_BUCKET_NAME" >> .env.production
+        - echo "NEXT_PUBLIC_CUSTOM_REGION=$NEXT_PUBLIC_CUSTOM_REGION" >> .env.production
+        - echo "NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL" >> .env.production
+
+        # AI APIs
+        - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env.production
+        - echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> .env.production
+
+        # Supabase
+        - echo "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL" >> .env.production
+        - echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY" >> .env.production
+        - echo "SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY" >> .env.production
+
+        # Project Limits
+        - echo "NEXT_PUBLIC_PROJECT_LIMIT=$NEXT_PUBLIC_PROJECT_LIMIT" >> .env.production
+
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*

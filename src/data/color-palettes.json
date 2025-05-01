@@ -110,5 +110,75 @@
       "highlight": "#393939",
       "border": "#525252"
     }
+  },
+  {
+    "name": "Sunset Warm",
+    "theme": "light",
+    "roles": {
+      "background": "#FFFFFF",
+      "surface": "#FFF8F5",
+      "text": "#2D1810",
+      "textSecondary": "#854D3A",
+      "primary": "#E85D04",
+      "accent": "#F48C06",
+      "highlight": "#FFEDD5",
+      "border": "#FFDCC3"
+    }
+  },
+  {
+    "name": "Berry Dark",
+    "theme": "dark",
+    "roles": {
+      "background": "#1A1523",
+      "surface": "#251B37",
+      "text": "#FFFFFF",
+      "textSecondary": "#E5D1FA",
+      "primary": "#C147E9",
+      "accent": "#E5B8F4",
+      "highlight": "#2D2440",
+      "border": "#372F4C"
+    }
+  },
+  {
+    "name": "Ocean Breeze",
+    "theme": "light",
+    "roles": {
+      "background": "#FFFFFF",
+      "surface": "#F0FCFF",
+      "text": "#164E63",
+      "textSecondary": "#0E7490",
+      "primary": "#0891B2",
+      "accent": "#22D3EE",
+      "highlight": "#CFFAFE",
+      "border": "#A5F3FC"
+    }
+  },
+  {
+    "name": "Emerald Night",
+    "theme": "dark",
+    "roles": {
+      "background": "#0F172A",
+      "surface": "#1E293B",
+      "text": "#FFFFFF",
+      "textSecondary": "#94A3B8",
+      "primary": "#10B981",
+      "accent": "#34D399",
+      "highlight": "#2E3B4F",
+      "border": "#475569"
+    }
+  },
+  {
+    "name": "Desert Sand",
+    "theme": "light",
+    "roles": {
+      "background": "#FFFFFF",
+      "surface": "#FDFCFB",
+      "text": "#44403C",
+      "textSecondary": "#78716C",
+      "primary": "#C2410C",
+      "accent": "#EA580C",
+      "highlight": "#FEF3C7",
+      "border": "#FDECD7"
+    }
   }
 ]

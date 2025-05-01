@@ -1,9 +1,7 @@
-import { ChatOpenAI } from "@langchain/openai";
+// import { ChatOpenAI } from "@langchain/openai";
 import { z } from "zod";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
-import fs from "fs";
-import path from "path";
 
 export type ImageWithMetadata = {
   url: string;
@@ -18,8 +16,6 @@ export type ImageWithMetadata = {
 export type BusinessInfo = {
   userId: string;
   name: string;
-  htmlSrc: string;
-  htmlContent?: string;
   description: string;
   offerings: string[];
   location: string;
@@ -67,71 +63,14 @@ const GeneratedFiles = z.object({
 
 export class LandingPageGenerator {
   private openai: OpenAI;
-  private llm: ChatOpenAI;
 
   constructor() {
     this.openai = new OpenAI();
-    this.llm = new ChatOpenAI({
-      modelName: "gpt-4o",
-      temperature: 1,
-    });
-  }
-
-  private getTemplateNameFromUrl(url: string): string {
-    try {
-      // Handle both URL and path formats
-      const parts = url.includes("://")
-        ? new URL(url).pathname.split("/")
-        : url.split("/");
-
-      // Find the index of 'templates-new' and get the next part
-      const templateNewIndex = parts.findIndex(
-        (part) => part === "templates-new"
-      );
-      if (templateNewIndex !== -1 && parts[templateNewIndex + 1]) {
-        return parts[templateNewIndex + 1];
-      }
-      throw new Error("Invalid template URL format");
-    } catch (error: any) {
-      throw new Error(`Failed to parse template URL: ${error.message}`);
-    }
-  }
-
-  private async readHtmlFiles(
-    templatePath: string
-  ): Promise<Array<{ name: string; content: string }>> {
-    try {
-      const files = fs.readdirSync(templatePath);
-      const htmlFiles = files.filter((file) => file.endsWith(".html"));
-
-      return htmlFiles.map((file) => ({
-        name: file,
-        content: fs.readFileSync(path.join(templatePath, file), "utf8"),
-      }));
-    } catch (error: any) {
-      console.error(`Error reading HTML files from ${templatePath}:`, error);
-      throw new Error(`Failed to read template files: ${error.message}`);
-    }
   }
 
   async generate(
     businessInfo: BusinessInfo
   ): Promise<Array<{ name: string; content: string }>> {
-    // Extract template name from URL and build path
-    const templateName = this.getTemplateNameFromUrl(businessInfo.htmlSrc);
-    const templatePath = path.join(
-      process.cwd(),
-      "public",
-      "templates-new",
-      templateName
-    );
-
-    if (!fs.existsSync(templatePath)) {
-      throw new Error(`Template directory not found: ${templatePath}`);
-    }
-
-    const templateFiles = await this.readHtmlFiles(templatePath);
-
     // Format business information for the prompt
     const formattedImages = businessInfo.images
       .map(
@@ -141,52 +80,97 @@ export class LandingPageGenerator {
       .join("\n");
 
     const formattedOfferings = businessInfo.offerings.join("\n");
+    const colorPalette =
+      businessInfo.design_preferences.color_palette?.roles || {};
 
-    // Generate customized files for each HTML template
-    const generatedFiles: Array<{ name: string; content: string }> = [];
+    const completion = await this.openai.beta.chat.completions.parse({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert web developer specializing in creating visually stunning, modern websites. Your task is to generate a complete, production-ready landing page with beautiful styling. The page must look professional and polished without requiring any additional work.
 
-    for (const template of templateFiles) {
-      const completion = await this.openai.beta.chat.completions.parse({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are a web development expert. Your task is to customize the provided HTML template with the business information.
+CRITICAL REQUIREMENTS:
+1. Create a COMPLETE HTML file with ALL necessary CSS in the head section
+2. The CSS must be COMPREHENSIVE and DETAILED to ensure the page looks professional
+3. The navigation menu MUST be properly styled (not just a bulleted list)
+4. Create a responsive layout that works on all devices
+5. Include proper spacing, padding, margins, and visual hierarchy
+6. Implement modern design trends with attention to typography and visual appeal
+7. Use Flexbox or CSS Grid for layout (avoid floats)
+8. Include animations and transitions for interactive elements
+9. Include media queries for mobile, tablet, and desktop
+10. Ensure buttons, forms, and interactive elements have hover/active states
+11. Add box-shadows, borders, and other styling details that make the site look professional
+12. Use proper CSS class naming conventions (like BEM)
+13. Ensure the complete functionality of all interactive elements with JavaScript
 
-Make sure to:
-- Replace all placeholder content with the business information
-- Update text and content to match the business details
-- Ensure all links and navigation are properly set up
-- Maintain responsive design and accessibility
-- Preserve the template's structure while customizing it for the business
+TECHNICAL SPECIFICATIONS:
+- The navigation must have proper styling with hover effects and mobile responsive design
+- Each section must have appropriate padding, margins, and visual separation
+- Use a modern, visually appealing design with proper typography hierarchy
+- Include a beautiful hero section with a gradient or image background
+- Use CSS variables for color themes
+- Ensure form elements are properly styled
+- Include complete and detailed CSS for ALL elements on the page
+- Make sure all buttons have proper styling, hover effects, and transitions
+- Use Font Awesome or other icon libraries for visual elements
+- Include specific CSS for mobile navigation (hamburger menu)
 
-Return an object with a 'files' array containing the customized HTML file.`,
-          },
-          {
-            role: "user",
-            content: `Template HTML (${template.name}):
-${template.content}
-
-Business Information:
+Do not cut corners on the CSS - the page must look complete and professional without any additional styling needed.`,
+        },
+        {
+          role: "user",
+          content: `Business Information:
 Name: ${businessInfo.name}
 Description: ${businessInfo.description}
 Offerings: ${formattedOfferings}
 Location: ${businessInfo.location}
 Images: ${formattedImages}
-Design Preferences: ${JSON.stringify(businessInfo.design_preferences)}
-Contact Preferences: ${JSON.stringify(businessInfo.contact_preferences)}
-Branding: ${JSON.stringify(businessInfo.branding)}`,
-          },
-        ],
-        response_format: zodResponseFormat(GeneratedFiles, "json"),
-      });
+Design Style: ${
+            businessInfo.design_preferences.style || "Modern and professional"
+          }
+Color Palette: 
+- Background: ${colorPalette.background || "#ffffff"}
+- Surface: ${colorPalette.surface || "#f8f9fa"}
+- Text: ${colorPalette.text || "#212529"}
+- Text Secondary: ${colorPalette.textSecondary || "#6c757d"}
+- Primary: ${colorPalette.primary || "#007bff"}
+- Accent: ${colorPalette.accent || "#17a2b8"}
+Contact Type: ${businessInfo.contact_preferences.type}
+Business Hours: ${businessInfo.contact_preferences.business_hours}
+Contact Email: ${businessInfo.contact_preferences.contact_email}
+Contact Phone: ${businessInfo.contact_preferences.contact_phone}
+Logo URL: ${businessInfo.branding.logo_url || "No logo provided"}
+Tagline: ${businessInfo.branding.tagline || ""}
 
-      const generatedFile = completion.choices[0].message.parsed?.files[0];
-      if (generatedFile) {
-        generatedFiles.push(generatedFile);
-      }
+Please generate a visually stunning, complete landing page that looks professionally designed. The page should have beautiful styling, proper navigation, and a modern look and feel. Make sure the CSS is comprehensive and the page requires no additional styling work.
+
+I specifically need:
+1. A properly styled navigation menu (not just a plain list)
+2. Beautiful section layouts with proper spacing
+3. Responsive design for all devices
+4. Modern, attractive styling for all elements
+5. Complete CSS with proper hover states and transitions
+6. A fully functional hamburger menu for mobile`,
+        },
+      ],
+      response_format: zodResponseFormat(GeneratedFiles, "json"),
+      max_tokens: 4000,
+    });
+
+    const files = completion.choices[0].message.parsed?.files || [];
+
+    // If no files were generated, create an error message
+    if (files.length === 0) {
+      return [
+        {
+          name: "error.txt",
+          content: "Failed to generate landing page. Please try again.",
+        },
+      ];
     }
 
-    return generatedFiles;
+    return files;
   }
 }
