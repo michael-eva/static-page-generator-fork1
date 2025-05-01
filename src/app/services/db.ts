@@ -66,7 +66,7 @@ export async function InsertDomainSetup(params: {
     siteId,
   } = params;
 
-  const { error } = await supabase.from("domain_setups").insert({
+  const { error } = await supabase.from("domain_setups").upsert({
     domain_name: domainName,
     certificate_arn: certificateArn,
     distribution_domain: distributionDomain,

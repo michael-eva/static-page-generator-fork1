@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { use } from "react";
@@ -46,7 +45,6 @@ export default function CompletePage({ params }: CompletePageProps) {
                 <CardHeader>
                     <div className="flex items-center space-x-4">
                         <CardTitle>Setup Complete</CardTitle>
-                        <Badge variant="default">Complete</Badge>
                     </div>
                     <CardDescription>
                         Your domain setup is complete! Follow these final steps to make your site accessible.
@@ -86,17 +84,8 @@ export default function CompletePage({ params }: CompletePageProps) {
                             </ol>
                         ) : (
                             <ol className="list-decimal list-inside space-y-2 text-sm">
-                                <li>Add the following ALIAS records to your current DNS provider:</li>
-                                <div className="ml-6 space-y-1">
-                                    <code className="block font-mono bg-muted p-2 rounded-md">
-                                        @ → {distributionDomain}
-                                    </code>
-                                    <code className="block font-mono bg-muted p-2 rounded-md">
-                                        www → {distributionDomain}
-                                    </code>
-                                </div>
                                 <li>If your DNS provider doesn&apos;t support ALIAS records, use your domain registrars redirect feature.</li>
-                                <li>Wait for DNS changes to propagate (can take up to 48 hours)</li>
+                                <li>Wait for DNS changes to propagate <strong>(can take up to 48 hours)</strong></li>
                                 <li>Your site will be accessible at:</li>
                                 <div className="ml-6 space-y-1">
                                     <code className="block font-mono bg-muted p-2 rounded-md">

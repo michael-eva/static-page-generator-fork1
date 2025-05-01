@@ -17,24 +17,12 @@ import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import toast from "react-hot-toast"
 import Link from "next/link"
+import { Website } from "@/hooks/useWebsites"
 
 type Props = {
     projectId: string
     userId: string
-    project: {
-        id: string
-        name: string
-        preview_url: string | null
-        site_id: string
-        hosting_status: string
-        updated_at: string
-        project_url: string
-        cloudfront_domain: string
-        domain_setups: {
-            completed: boolean,
-            domain_name: string,
-        }[]
-    }
+    project: Website
 }
 
 export default function WebsiteCard(props: Props) {
@@ -127,7 +115,7 @@ export default function WebsiteCard(props: Props) {
                         <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                        {project.hosting_status}
+                        {project.hosting_status.split("_").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}
                     </Badge>
                     {project.cloudfront_domain ? (
                         <Badge variant="secondary" className="rounded-full px-3 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
@@ -177,7 +165,7 @@ export default function WebsiteCard(props: Props) {
                     )}
                 </div>
                 {!project.domain_setups[0]?.completed && (
-                    <Link href={`/${props.userId}/edit/${project.id}/domain`} rel="noopener noreferrer">
+                    <Link href={`/${props.userId}/edit/${project.site_id}/domain`} rel="noopener noreferrer">
                         <Button>Connect Domain</Button>
                     </Link>
                 )}
