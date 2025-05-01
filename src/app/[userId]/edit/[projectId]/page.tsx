@@ -3,7 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWebsites } from '@/hooks/useWebsites';
 import { use } from 'react';
 import { PanelResizeHandle, Panel, PanelGroup } from "react-resizable-panels"
-import { GripVertical } from "lucide-react"
+import { GripVertical, Globe } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 // import { useState } from "react"
 
 interface PageProps {
@@ -15,7 +17,6 @@ interface PageProps {
 export default function ProjectEditPage({ params }: PageProps) {
     const { projectId, userId } = use(params)
     const { data: websites, isLoading, error } = useWebsites(userId);
-    // const [isChatMinimized, setIsChatMinimized] = useState(false);s
 
     if (isLoading) return (
         <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -70,13 +71,23 @@ export default function ProjectEditPage({ params }: PageProps) {
 
     if (error) return <div>Error loading website</div>;
 
-    const website = websites?.find((website) => website.id === projectId);
+    const website = websites?.find((website) => website.site_id === projectId);
     if (!website) return <div>Website not found</div>;
 
 
     return (
         <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <h1 className="text-2xl font-bold mb-4">Edit Project</h1>
+            <div className="flex justify-between items-center mb-6">
+                <div className="space-x-4">
+                    <Button variant="outline" asChild>
+                        <Link href={`/${userId}/edit/${projectId}/domain`}>
+                            <Globe className="mr-2 h-4 w-4" />
+                            Domain Setup
+                        </Link>
+                    </Button>
+                </div>
+            </div>
 
             <PanelGroup
                 direction="horizontal"

@@ -12,7 +12,7 @@ import { FormProgressTracker } from './FormProgressTracker'
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { BusinessInfoSchema } from "@/types/business";
+import { BusinessInfoSchema } from "../../../../types/business";
 import { useSupabaseSession } from '@/hooks/useSupabaseSession'
 import { useRouter } from 'next/navigation'
 import { useProjectLimits } from '@/hooks/useProjectLimits'
@@ -142,10 +142,10 @@ export default function WebsiteBuilderForm() {
     // All useEffect hooks
     useEffect(() => {
         setIsClient(true);
-        
+
         // Check for data in localStorage first
         let savedData = localStorage.getItem('websiteBuilder');
-        
+
         // If no data in localStorage, try to recover from backup mechanisms
         if (!savedData) {
             savedData = recoverFormData();
@@ -156,7 +156,7 @@ export default function WebsiteBuilderForm() {
                 clearFormData();
             }
         }
-        
+
         if (savedData) {
             try {
                 const { formData, currentTab: savedTab } = JSON.parse(savedData);
