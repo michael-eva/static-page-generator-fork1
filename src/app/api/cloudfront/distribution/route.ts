@@ -56,6 +56,7 @@ export async function GET(request: Request) {
       });
     } catch (error: any) {
       // If the error is CNAMEAlreadyExists, proceed with DNS setup
+      console.log("[Distribution] Error:", error);
       if (error?.Code === "CNAMEAlreadyExists") {
         try {
           // Get the distribution domain name
@@ -64,7 +65,7 @@ export async function GET(request: Request) {
           if (distributionDomain) {
             return NextResponse.json({
               distribution: {
-                Id: siteId,
+                Id: `${distributionId}.cloudfront.net`,
                 DomainName: distributionDomain,
                 Status: "Deployed",
               },
@@ -93,7 +94,7 @@ export async function GET(request: Request) {
 
           return NextResponse.json({
             distribution: {
-              Id: siteId,
+              Id: `${distributionId}.cloudfront.net`,
               DomainName: mockDomain,
               Status: "Deployed",
             },

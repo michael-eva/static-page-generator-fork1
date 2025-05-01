@@ -6,6 +6,7 @@ import { PanelResizeHandle, Panel, PanelGroup } from "react-resizable-panels"
 import { GripVertical, Globe } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { Badge } from '@/components/ui/badge';
 // import { useState } from "react"
 
 interface PageProps {
@@ -79,14 +80,29 @@ export default function ProjectEditPage({ params }: PageProps) {
         <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <h1 className="text-2xl font-bold mb-4">Edit Project</h1>
             <div className="flex justify-between items-center mb-6">
-                <div className="space-x-4">
+                {!website.domain_setups[0]?.completed ? <div className="space-x-4">
                     <Button variant="outline" asChild>
                         <Link href={`/${userId}/edit/${projectId}/domain`}>
                             <Globe className="mr-2 h-4 w-4" />
                             Domain Setup
                         </Link>
                     </Button>
-                </div>
+                </div> :
+                    <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="rounded-full px-3 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                            <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                            Domain Connected
+                        </Badge>
+                        <Link href={`https://${website.domain_setups[0].domain_name}`} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" size="sm">
+                                <Globe className="mr-2 h-4 w-4" />
+                                Visit {website.domain_setups[0].domain_name}
+                            </Button>
+                        </Link>
+                    </div>
+                }
             </div>
 
             <PanelGroup

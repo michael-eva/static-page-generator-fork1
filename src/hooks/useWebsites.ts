@@ -2,7 +2,24 @@
 
 import { supabase } from "@/lib/supabase/client/supabase";
 import { useQuery } from "@tanstack/react-query";
-
+export type Website = {
+  id: string;
+  name: string;
+  hosting_status: string;
+  preview_url: string;
+  project_url: string;
+  cloudfront_domain?: string;
+  site_id: string;
+  updated_at: string;
+  domain_setups: {
+    domain_name: string;
+    certificate_arn: string;
+    distribution_domain: string;
+    dns_setup_option: string;
+    nameservers: string[];
+    completed: boolean;
+  }[];
+};
 export function useWebsites(userId: string) {
   return useQuery({
     queryKey: ["websites", userId],
@@ -12,7 +29,7 @@ export function useWebsites(userId: string) {
         .select(
           `
           *,
-          domain_setups!inner (
+          domain_setups!left (
             domain_name,
             certificate_arn,
             distribution_domain,
@@ -27,7 +44,7 @@ export function useWebsites(userId: string) {
         )
         .eq("user_id", userId)
         .limit(1);
-      return data;
+      return data as Website[];
     },
     staleTime: 1000 * 60 * 5,
   });

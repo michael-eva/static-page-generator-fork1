@@ -113,7 +113,6 @@ export async function POST(request: Request) {
       const { error } = await supabase.from("websites").insert({
         site_id: siteId,
         user_id: userId,
-        domain_connected: false,
         name: validatedData.name,
         preview_url: previewUrl,
         project_url: deployment.url,

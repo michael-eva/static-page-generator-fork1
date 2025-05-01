@@ -49,6 +49,8 @@ export default function DistributionPage({ params }: DistributionPageProps) {
 
             if (data.distribution) {
                 console.log("data.distribution", data.distribution);
+                console.log("data", data);
+
                 // Update the stored data with distribution information
                 const setupData = JSON.parse(localStorage.getItem('domainSetupData') || '{}');
                 localStorage.setItem('domainSetupData', JSON.stringify({
