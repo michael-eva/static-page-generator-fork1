@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from '@/components/Navbar'
+import ConditionalNavbar from '@/components/ConditionalNavbar';
 import Providers from './providers';
 import { Toaster } from "react-hot-toast";
+import GlobalInfoBanner from "@/components/GlobalInfoBanner";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -15,8 +17,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Static Page Generator",
-  description: "Generate static pages easily",
+  title: "BuildSite",
+  description: "Build your website in minutes",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -30,7 +35,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <Navbar />
+          <GlobalInfoBanner />
+          <ConditionalNavbar />
           {children}
         </Providers>
         <Toaster />

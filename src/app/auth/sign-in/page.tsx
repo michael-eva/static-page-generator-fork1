@@ -1,73 +1,93 @@
 'use client'
 import { supabase } from "@/lib/supabase/client/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState, Suspense } from "react"
-import { FcGoogle } from 'react-icons/fc'
+import { useState, Suspense, useEffect } from "react"
+// import { FcGoogle } from 'react-icons/fc'
+import { persistFormData } from '@/lib/formDataPersistence'
 
 function SignInContent() {
     const searchParams = useSearchParams()
-    const returnUrl = searchParams.get('returnUrl') || '/'
+    const returnUrl = searchParams.get('returnUrl') || 'questionnaire'
     const [email, setEmail] = useState('')
+
+    // Save questionnaire data for persistence across auth flow
+    useEffect(() => {
+        if (typeof window !== 'undefined' && returnUrl === 'questionnaire') {
+            const websiteBuilderData = localStorage.getItem('websiteBuilder')
+            if (websiteBuilderData) {
+                // Persist form data in multiple storage mechanisms
+                persistFormData(websiteBuilderData)
+            }
+        }
+    }, [returnUrl])
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [isSignUp, setIsSignUp] = useState(false)
     const router = useRouter()
-
     const handleEmailAuth = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
         setError(null)
 
-        if (isSignUp) {
-            // Sign up
-            const { error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    emailRedirectTo: `/${encodeURIComponent(returnUrl)}`
+        // Try sign in first
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        })
+
+        if (signInError) {
+            // If error indicates user doesn't exist, try signing up
+            if (signInError.message.includes('Invalid login credentials')) {
+                // First ensure we persist form data associated with this email
+                const websiteBuilderData = localStorage.getItem('websiteBuilder')
+                if (websiteBuilderData) {
+                    persistFormData(websiteBuilderData, email)
                 }
-            })
-            if (error) {
-                setError(error.message)
+
+                const { error: signUpError } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        emailRedirectTo: `${window.location.origin}/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`
+                    }
+                })
+
+                if (signUpError) {
+                    setError(signUpError.message)
+                } else {
+                    // Remove email confirmation message and navigate directly
+                    router.push(`/${returnUrl}`)
+                }
             } else {
-                setError('Please check your email for the confirmation link.')
+                setError(signInError.message)
             }
         } else {
-            // Sign in
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            })
-            if (error) {
-                setError(error.message)
-            } else {
-                router.push(`/${returnUrl}`)
-            }
+            router.push(`/${returnUrl}`)
         }
+
         setLoading(false)
     }
 
-    const handleGoogleSignIn = async () => {
-        setLoading(true)
-        setError(null)
+    // const handleGoogleSignIn = async () => {
+    //     setLoading(true)
+    //     setError(null)
 
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: `${window.location.origin}/auth/callback?returnUrl=${encodeURIComponent(returnUrl)}`
-            }
-        })
-
-        if (error) {
-            setError(error.message)
-            setLoading(false)
-        }
-    }
+    //     const redirectUrl = `/${returnUrl}`;
+    //     const { error } = await supabase.auth.signInWithOAuth({
+    //         provider: 'google',
+    //         options: {
+    //             redirectTo: redirectUrl,
+    //         }
+    //     })
+    //     if (error) {
+    //         setError(error.message)
+    //         setLoading(false)
+    //     }
+    // }
 
     return (
         <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-            <h1 className="text-2xl font-bold mb-6">{isSignUp ? 'Sign Up' : 'Sign In'}</h1>
+            <h1 className="text-2xl font-bold mb-6">Sign In / Sign Up</h1>
 
             <form onSubmit={handleEmailAuth} className="space-y-4">
                 <div>
@@ -95,10 +115,14 @@ function SignInContent() {
                     disabled={loading}
                     className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
                 >
-                    {loading ? 'Loading...' : isSignUp ? 'Sign Up with Email' : 'Sign In with Email'}
+                    {loading ? 'Loading...' : 'Continue with Email'}
                 </button>
             </form>
-
+            {/* <div className="flex items-center justify-center gap-2 mt-4">
+                <div className="h-[1px] w-full bg-gray-300"></div>
+                <p className="text-gray-500">or</p>
+                <div className="h-[1px] w-full bg-gray-300"></div>
+            </div>
             <div className="mt-4">
                 <button
                     onClick={handleGoogleSignIn}
@@ -106,18 +130,9 @@ function SignInContent() {
                     className="w-full bg-white border border-gray-300 p-2 rounded hover:bg-gray-50 flex items-center justify-center gap-2"
                 >
                     <FcGoogle className="text-xl" />
-                    {isSignUp ? 'Sign Up' : 'Sign In'} with Google
+                    Sign In with Google
                 </button>
-            </div>
-
-            <div className="mt-4 text-center">
-                <button
-                    onClick={() => setIsSignUp(!isSignUp)}
-                    className="text-blue-500 hover:text-blue-600"
-                >
-                    {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-                </button>
-            </div>
+            </div> */}
 
             {error && (
                 <div className="mt-4 text-red-500">

@@ -1,6 +1,7 @@
+import { DeleteSite } from "@/app/services/db"
 import { S3Service } from "@/app/services/s3"
 import { NextResponse } from "next/server"
-import DeleteSite from "@/app/services/db"
+
 export async function POST(request: Request) {
     try {
         const data = await request.json()
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
         }
         const s3 = new S3Service()
         await s3.deleteSite(siteId)
+        //TODO: Delete CloudFront distribution
         await DeleteSite({ siteId })
         return NextResponse.json({ message: "Site deleted" })
     } catch (error) {

@@ -10,7 +10,7 @@ import ImagePreview from './ImagePreview'
 import colorPalettes from '@/data/color-palettes.json'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { UseFormReturn } from "react-hook-form"
-import { FormSchema, TabValue } from "../page"
+import { FormSchema, TabValue } from "./Form"
 import ContactCard from "./ContactCard"
 
 interface WebsiteBuilderContentProps {
@@ -44,7 +44,7 @@ export function WebsiteBuilderContent({
       case "basic":
         return (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
+            <h2 className="text-xl font-semibold mb-4 text-blue-600">Basic Information</h2>
 
             <div className="space-y-4">
               <div>
@@ -188,7 +188,7 @@ export function WebsiteBuilderContent({
       case "offerings":
         return (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold mb-4">Offerings/Services</h2>
+            <h2 className="text-xl font-semibold mb-4 text-blue-600">Offerings/Services</h2>
 
             <div className="space-y-4">
               <FormLabel
@@ -231,7 +231,7 @@ export function WebsiteBuilderContent({
       case "visual":
         return (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold mb-4">Visual Style</h2>
+            <h2 className="text-xl font-semibold mb-4 text-blue-600">Visual Style</h2>
 
             <div className="space-y-4">
               <div>
@@ -362,7 +362,7 @@ export function WebsiteBuilderContent({
       case "location":
         return (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold mb-4">Location & Hours</h2>
+            <h2 className="text-xl font-semibold mb-4 text-blue-600">Location & Hours</h2>
 
             <div className="space-y-4">
               <div>
@@ -401,7 +401,7 @@ export function WebsiteBuilderContent({
       case "contact":
         return (
           <div className="space-y-6" ref={contactMethodsRef}>
-            <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
+            <h2 className="text-xl font-semibold mb-4 text-blue-600">Contact Information</h2>
 
             <div className="space-y-4">
               <div>
