@@ -1,4 +1,4 @@
-import { MoreHorizontal, Link as LinkIcon } from "lucide-react"
+import { MoreHorizontal } from "lucide-react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -92,25 +92,8 @@ export default function WebsiteCard(props: Props) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" onClick={(e) => e.preventDefault()}>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => router.push(`/${props.userId}/edit/${project.id}`)}>View Project</DropdownMenuItem>
-                        <DropdownMenuItem 
-                            onClick={(e) => {
-                                e.preventDefault();
-                                if (project.preview_url) {
-                                    window.open(project.preview_url, '_blank');
-                                }
-                            }}
-                            disabled={!project.preview_url}
-                        >
-                            View Deployment
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                            onClick={handleCopyPreviewLink}
-                            disabled={!project.preview_url}
-                        >
-                            <LinkIcon className="mr-2 h-4 w-4" />
-                            Copy Preview Link
-                        </DropdownMenuItem>
+                        <DropdownMenuItem>View Project</DropdownMenuItem>
+                        <DropdownMenuItem>View Deployment</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                             className="text-red-500"
