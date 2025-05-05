@@ -3,7 +3,7 @@ import { HTMLEditor } from "@/app/services/html-editor";
 import { S3Service } from "@/app/services/s3";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 
-const htmlEditor = new HTMLEditor();
+const htmlEditor = new HTMLEditor("hf-cerebras", "meta-llama/Llama-4-Scout-17B-16E-Instruct");
 const s3 = new S3Service();
 
 export async function POST(request: Request) {

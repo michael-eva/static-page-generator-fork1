@@ -3,29 +3,46 @@ import { S3Service } from "./s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { z } from "zod";
 import Groq from "groq-sdk";
+import { InferenceClient } from "@huggingface/inference";
+
+type ModelProvider = "groq" | "hf-cerebras";
 
 export class HTMLEditor {
-  private anthropic: Anthropic;
   private s3: S3Service;
-  private groq: InstanceType<typeof Groq>;
+  private groq: InstanceType<typeof Groq> | null = null;
+  private hfClient: InstanceType<typeof InferenceClient> | null = null;
+  private modelProvider: ModelProvider;
+  private hfModel: string;
 
-  constructor(apiKey?: string) {
+  constructor(
+    modelProvider: ModelProvider = "hf-cerebras",
+    hfModel: string = "meta-llama/Llama-4-Scout-17B-16E-Instruct" // Default HF model
+  ) {
     // Check if we're in a browser environment
     if (typeof window !== 'undefined') {
       throw new Error('HTMLEditor can only be used on the server side');
     }
 
-    this.anthropic = new Anthropic({
-      apiKey: apiKey || process.env.ANTHROPIC_API_KEY,
-      fetch: (url, options) => {
-        return fetch(url, {
-          ...options,
-          signal: AbortSignal.timeout(120000),
-        });
-      },
-    });
     this.s3 = new S3Service();
-    this.groq = new Groq();
+    this.modelProvider = modelProvider;
+    this.hfModel = hfModel;
+
+    if (modelProvider === "groq") {
+      const groqApiKey = process.env.GROQ_API_KEY;
+      if (!groqApiKey) {
+        throw new Error("GROQ_API_KEY environment variable is not set.");
+      }
+      this.groq = new Groq({ apiKey: groqApiKey });
+    } else if (modelProvider === "hf-cerebras") {
+      const hfToken = process.env.HF_TOKEN;
+      if (!hfToken) {
+        throw new Error("HF_TOKEN environment variable is not set.");
+      }
+      this.hfClient = new InferenceClient(hfToken);
+    } else {
+      // Ensure exhaustive check - though TypeScript should catch this
+      throw new Error(`Unsupported model provider: ${modelProvider}`);
+    }
   }
 
   private extractHtmlContent(responseText: string): string {
@@ -120,7 +137,7 @@ export class HTMLEditor {
       // Convert the stream to a string
       const currentHTML = await response.Body.transformToString();
 
-      // Prepare the prompt for Groq
+      // Prepare the prompt for the AI model
       const systemPrompt = `You are an expert web developer. Your task is to edit the provided HTML content based on the user's instructions. 
 
 CRITICAL REQUIREMENTS:
@@ -178,7 +195,7 @@ DO NOT include any explanations, comments, or additional text.
 DO NOT use markdown formatting or code blocks.
 The response must be a complete, valid HTML document ready for deployment, with ALL original code preserved except for the specific changes requested.`;
 
-      const userPrompt = `Current HTML content:
+      const userPromptContent = `Current HTML content:
 ${currentHTML}
 
 User's edit instructions:
@@ -187,28 +204,44 @@ ${prompt}
 Please provide the complete edited HTML document that implements these changes. Remember to preserve ALL original content and only modify the specific parts mentioned in the instructions. The response must be a complete HTML document ready for deployment.`;
 
       let fullResponse = '';
-      const chatCompletion = await this.groq.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
-          {
-            role: "user",
-            content: userPrompt,
-          },
-        ],
-        model: "qwen-2.5-coder-32b",
-        temperature: 0.6,
-        max_completion_tokens: 70000,
-        top_p: 0.95,
-        stream: true,
-        stop: null
-      });
 
-      for await (const chunk of chatCompletion) {
-        const content = chunk.choices[0]?.delta?.content || '';
-        fullResponse += content;
+      if (this.modelProvider === "groq" && this.groq) {
+        const chatCompletion = await this.groq.chat.completions.create({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPromptContent },
+          ],
+          model: "qwen-2.5-coder-32b", // Or make this configurable?
+          temperature: 0.6,
+          max_completion_tokens: 70000,
+          top_p: 0.95,
+          stream: true,
+          stop: null
+        });
+
+        for await (const chunk of chatCompletion) {
+          const content = chunk.choices[0]?.delta?.content || '';
+          fullResponse += content;
+        }
+      } else if (this.modelProvider === "hf-cerebras" && this.hfClient) {
+        const chatCompletion = await this.hfClient.chatCompletion({
+          // provider: "cerebras", // Provider might not be needed for specific model routes
+          model: this.hfModel, // Use the stored model name
+          messages: [
+            // NOTE: HF might not explicitly support a "system" role in the same way.
+            // Combining into user prompt might be necessary if issues arise.
+            // For now, let's try including it, assuming it handles it or ignores it gracefully.
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPromptContent }
+          ],
+          max_tokens: 8000, // Adjust max tokens as needed for HF models
+          // stream: false, // HF client example didn't use streaming
+        });
+
+        fullResponse = chatCompletion.choices[0]?.message?.content ?? '';
+
+      } else {
+        throw new Error(`Invalid model provider configuration: ${this.modelProvider}`);
       }
 
       // Extract the HTML content from the response
