@@ -8,7 +8,6 @@ import {
   PriceClass,
   SSLSupportMethod,
   MinimumProtocolVersion,
-  CreateCloudFrontOriginAccessIdentityCommand,
 } from "@aws-sdk/client-cloudfront";
 import { ACMClient, ListCertificatesCommand } from "@aws-sdk/client-acm";
 import { S3Client, PutBucketPolicyCommand } from "@aws-sdk/client-s3";
@@ -51,21 +50,16 @@ export class CloudFrontService {
         domainNames,
       });
 
-      // Setup OAI and bucket policy
-      console.log("[CloudFront] Setting up Origin Access Identity");
-      const oaiResponse = await this.setupOriginAccessIdentity(
-        "default-oai",
-        "system"
-      );
-      const oaiId = oaiResponse.CloudFrontOriginAccessIdentity?.Id;
-      const oaiS3CanonicalUserId =
-        oaiResponse.CloudFrontOriginAccessIdentity?.S3CanonicalUserId;
+      // Use static OAI from environment variables
+      const oaiId = process.env.CLOUDFRONT_ORIGIN_ACCESS_ID;
 
-      if (!oaiId || !oaiS3CanonicalUserId) {
-        throw new Error("Failed to create Origin Access Identity");
+      if (!oaiId) {
+        throw new Error(
+          "CloudFront OAI configuration is missing in environment variables"
+        );
       }
 
-      console.log("[CloudFront] Got OAI ID:", oaiId);
+      console.log("[CloudFront] Using OAI ID:", oaiId);
 
       // Update S3 bucket policy to allow OAI access to all site paths
       const s3Client = new S3Client({
@@ -83,7 +77,7 @@ export class CloudFrontService {
             Sid: "AllowCloudFrontAccess",
             Effect: "Allow",
             Principal: {
-              CanonicalUser: oaiS3CanonicalUserId,
+              AWS: `arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${process.env.CLOUDFRONT_ORIGIN_ACCESS_ID}`,
             },
             Action: "s3:GetObject",
             Resource: `arn:aws:s3:::${process.env.S3_BUCKET_NAME}/*`,
@@ -186,6 +180,7 @@ export class CloudFrontService {
       throw error;
     }
   }
+
   /**
    * Gets the status of a CloudFront distribution
    */
@@ -218,32 +213,6 @@ export class CloudFrontService {
       return response.Distribution;
     } catch (error) {
       console.error("Error updating distribution:", error);
-      throw error;
-    }
-  }
-
-  private static async setupOriginAccessIdentity(
-    domainName: string,
-    userId: string
-  ) {
-    try {
-      // Create OAI
-      const oaiCommand = new CreateCloudFrontOriginAccessIdentityCommand({
-        CloudFrontOriginAccessIdentityConfig: {
-          CallerReference: `${userId}-${Date.now()}-oai`,
-          Comment: `OAI for ${domainName}`,
-        },
-      });
-      const oaiResponse = await cloudfrontClient.send(oaiCommand);
-      const oaiId = oaiResponse.CloudFrontOriginAccessIdentity?.Id;
-
-      if (!oaiId) {
-        throw new Error("Failed to create Origin Access Identity");
-      }
-
-      return oaiResponse;
-    } catch (error) {
-      console.error("Error setting up Origin Access Identity:", error);
       throw error;
     }
   }
