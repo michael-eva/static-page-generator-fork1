@@ -122,7 +122,9 @@ export default function ProjectEditPage({ params }: PageProps) {
                         <CardContent className="flex-1 p-0">
                             <div className="h-full w-full border rounded-lg overflow-hidden">
                                 <iframe
-                                    src={website.project_url}
+                                    src={website.cloudfront_domain
+                                        ? `https://${website.cloudfront_domain}`
+                                        : `${process.env.NEXT_PUBLIC_SITE_URL}/api/proxy?url=${encodeURIComponent(website.project_url)}`}
                                     className="w-full h-full"
                                     title="Website Preview"
                                 />
