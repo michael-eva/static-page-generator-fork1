@@ -70,27 +70,27 @@ export class CloudFrontService {
         },
       });
 
-      const bucketPolicy = {
-        Version: "2012-10-17",
-        Statement: [
-          {
-            Sid: "AllowCloudFrontAccess",
-            Effect: "Allow",
-            Principal: {
-              AWS: `arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${process.env.CLOUDFRONT_ORIGIN_ACCESS_ID}`,
-            },
-            Action: "s3:GetObject",
-            Resource: `arn:aws:s3:::${process.env.S3_BUCKET_NAME}/*`,
-          },
-        ],
-      };
+      // const bucketPolicy = {
+      //   Version: "2012-10-17",
+      //   Statement: [
+      //     {
+      //       Sid: "AllowCloudFrontAccess",
+      //       Effect: "Allow",
+      //       Principal: {
+      //         AWS: `arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${process.env.CLOUDFRONT_ORIGIN_ACCESS_ID}`,
+      //       },
+      //       Action: "s3:GetObject",
+      //       Resource: `arn:aws:s3:::${process.env.S3_BUCKET_NAME}/*`,
+      //     },
+      //   ],
+      // };
 
-      await s3Client.send(
-        new PutBucketPolicyCommand({
-          Bucket: process.env.S3_BUCKET_NAME,
-          Policy: JSON.stringify(bucketPolicy),
-        })
-      );
+      // await s3Client.send(
+      //   new PutBucketPolicyCommand({
+      //     Bucket: process.env.S3_BUCKET_NAME,
+      //     Policy: JSON.stringify(bucketPolicy),
+      //   })
+      // );
 
       // Determine the domain names to use
       let aliasItems: string[] = [];
