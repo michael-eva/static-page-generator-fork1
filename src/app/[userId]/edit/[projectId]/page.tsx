@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWebsites } from '@/hooks/useWebsites';
 import { use } from 'react';
 import { PanelResizeHandle, Panel, PanelGroup } from "react-resizable-panels"
-import { GripVertical, Globe, ChevronRight, ChevronLeft, Settings, Trash2 } from "lucide-react"
+import { GripVertical, Globe, ChevronRight, ChevronLeft, Settings, Trash2, HelpCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,12 @@ import {
 import { useState } from "react"
 import { toast } from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface PageProps {
     params: Promise<{
@@ -129,12 +135,39 @@ export default function ProjectEditPage({ params }: PageProps) {
                 <h1 className="text-2xl font-bold">Edit Project</h1>
                 <div className="flex items-center gap-2">
                     {website.domain_setups[0]?.completed && (
-                        <Badge variant="secondary" className="rounded-full px-3 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                            <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                            </svg>
-                            Domain Connected
-                        </Badge>
+                        <>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <HelpCircle className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="w-80 p-4">
+                                        <div className="space-y-2">
+                                            <h4 className="font-semibold">Domain Setup Status</h4>
+                                            <p className="text-sm text-muted-foreground">
+                                                Your domain has been successfully connected! Here's what's happening:
+                                            </p>
+                                            <ul className="text-sm space-y-1 list-disc list-inside">
+                                                <li>DNS changes are propagating (can take up to 48 hours)</li>
+                                                <li>SSL certificate is active and secure</li>
+                                                <li>CloudFront distribution is configured</li>
+                                            </ul>
+                                            <p className="text-sm text-muted-foreground mt-2">
+                                                If you can't access your site yet, please wait for DNS propagation to complete.
+                                            </p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <Badge variant="secondary" className="rounded-full px-3 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                </svg>
+                                Domain Connected
+                            </Badge>
+                        </>
                     )}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
