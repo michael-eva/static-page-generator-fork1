@@ -10,7 +10,7 @@ import {
   MinimumProtocolVersion,
 } from "@aws-sdk/client-cloudfront";
 import { ACMClient, ListCertificatesCommand } from "@aws-sdk/client-acm";
-import { S3Client, PutBucketPolicyCommand } from "@aws-sdk/client-s3";
+// import { S3Client } from "@aws-sdk/client-s3";
 
 const region = process.env.CUSTOM_REGION;
 
@@ -62,13 +62,13 @@ export class CloudFrontService {
       console.log("[CloudFront] Using OAI ID:", oaiId);
 
       // Update S3 bucket policy to allow OAI access to all site paths
-      const s3Client = new S3Client({
-        region: process.env.CUSTOM_REGION,
-        credentials: {
-          accessKeyId: process.env.CUSTOM_ACCESS_KEY_ID ?? "",
-          secretAccessKey: process.env.CUSTOM_SECRET_ACCESS_KEY ?? "",
-        },
-      });
+      // const s3Client = new S3Client({
+      //   region: process.env.CUSTOM_REGION,
+      //   credentials: {
+      //     accessKeyId: process.env.CUSTOM_ACCESS_KEY_ID ?? "",
+      //     secretAccessKey: process.env.CUSTOM_SECRET_ACCESS_KEY ?? "",
+      //   },
+      // });
 
       // const bucketPolicy = {
       //   Version: "2012-10-17",
