@@ -12,6 +12,15 @@ const nextConfig = {
       }
     ],
   },
+  // Ensure the local-storage directory is accessible
+  async rewrites() {
+    return [
+      {
+        source: '/local-storage/:path*',
+        destination: '/public/local-storage/:path*',
+      },
+    ];
+  }
 }
 
 module.exports = nextConfig 
