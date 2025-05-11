@@ -1,8 +1,7 @@
 'use client'
 import { usePathname, useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
-import { ChevronRight, Home, Check } from "lucide-react";
-import Link from "next/link";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import React from "react";
 import { Breadcrumbs } from '@/components/breadcrumbs';

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWebsites } from '@/hooks/useWebsites';
 import { use } from 'react';
 import { PanelResizeHandle, Panel, PanelGroup } from "react-resizable-panels"
-import { GripVertical, Globe, ChevronRight, ChevronLeft, Settings, Trash2, HelpCircle } from "lucide-react"
+import { GripVertical, Globe, Settings, Trash2, HelpCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Badge } from '@/components/ui/badge';
