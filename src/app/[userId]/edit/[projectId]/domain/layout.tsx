@@ -17,7 +17,7 @@ interface DomainLayoutProps {
 const steps = [
     { name: "Input", path: "input", icon: "📝" },
     { name: "Validation", path: "validation", icon: "✓" },
-    { name: "Distribution", path: "distribution", icon: "🌐" },
+    // { name: "Distribution", path: "distribution", icon: "🌐" },
     { name: "DNS", path: "dns", icon: "🔗" },
     { name: "Complete", path: "complete", icon: "🎉" },
 ];
