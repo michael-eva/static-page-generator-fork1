@@ -147,7 +147,7 @@ export default function ProjectEditPage({ params }: PageProps) {
                                         <div className="space-y-2">
                                             <h4 className="font-semibold">Domain Setup Status</h4>
                                             <p className="text-sm text-muted-foreground">
-                                                Your domain has been successfully connected! Here's what's happening:
+                                                Your domain has been successfully connected! Here&apos;s what&apos;s happening:
                                             </p>
                                             <ul className="text-sm space-y-1 list-disc list-inside">
                                                 <li>DNS changes are propagating (can take up to 48 hours)</li>
@@ -155,7 +155,7 @@ export default function ProjectEditPage({ params }: PageProps) {
                                                 <li>CloudFront distribution is configured</li>
                                             </ul>
                                             <p className="text-sm text-muted-foreground mt-2">
-                                                If you can't access your site yet, please wait for DNS propagation to complete.
+                                                If you can&apos;t access your site yet, please wait for DNS propagation to complete.
                                             </p>
                                         </div>
                                     </TooltipContent>

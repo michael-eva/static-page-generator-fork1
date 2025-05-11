@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, ArrowRight, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { use } from "react";
 
 interface InputPageProps {
   userId: string;

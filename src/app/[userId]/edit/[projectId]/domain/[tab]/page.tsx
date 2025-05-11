@@ -12,7 +12,7 @@ interface PageProps {
     tab: string;
   }>;
 }
-export default function page({ params }: PageProps) {
+export default function Page({ params }: PageProps) {
   const { tab, userId, projectId } = use(params)
 
   switch (tab) {
