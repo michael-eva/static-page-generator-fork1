@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { Readable } from "stream";
+import { supabase } from "@/lib/supabase/server/supsbase";
 
 const s3Client = new S3Client({
   region: process.env.CUSTOM_REGION || "us-east-2",
@@ -14,18 +15,39 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const url = searchParams.get("url");
+    const siteId = searchParams.get("siteId");
 
-    if (!url) {
+    if (!url && !siteId) {
       return NextResponse.json(
-        { error: "URL parameter is required" },
+        { error: "Either URL or siteId parameter is required" },
         { status: 400 }
       );
     }
 
-    // Parse the S3 URL to get bucket and key
-    const urlObj = new URL(url);
-    const bucket = urlObj.hostname.split(".")[0];
-    const key = urlObj.pathname.substring(1); // Remove leading slash
+    let bucket: string;
+    let key: string;
+
+    if (siteId) {
+      // If siteId is provided, fetch the project URL from the database
+      const { data: website, error } = await supabase
+        .from("websites")
+        .select("project_url")
+        .eq("site_id", siteId)
+        .single();
+
+      if (error || !website) {
+        return NextResponse.json({ error: "Site not found" }, { status: 404 });
+      }
+
+      const urlObj = new URL(website.project_url);
+      bucket = urlObj.hostname.split(".")[0];
+      key = urlObj.pathname.substring(1);
+    } else {
+      // If URL is provided, parse it directly
+      const urlObj = new URL(url!);
+      bucket = urlObj.hostname.split(".")[0];
+      key = urlObj.pathname.substring(1);
+    }
 
     // Get the object from S3
     const command = new GetObjectCommand({

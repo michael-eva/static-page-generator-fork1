@@ -151,7 +151,7 @@ export default function WebsiteCard(props: Props) {
             </CardContent>
             <CardFooter className="flex justify-between">
                 <div className="flex gap-2">
-                    <Link href={project.project_url} target="_blank" rel="noopener noreferrer">
+                    <Link href={`${process.env.NEXT_PUBLIC_SITE_URL}/api/proxy?siteId=${project.site_id}`} target="_blank" rel="noopener noreferrer">
                         <Button>View Website</Button>
                     </Link>
                     {project.domain_setups[0]?.completed && (
