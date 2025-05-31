@@ -156,7 +156,7 @@ I specifically need:
         },
       ],
       response_format: zodResponseFormat(GeneratedFiles, "json"),
-      max_tokens: 4000,
+      max_tokens: 70000,
     });
 
     const files = completion.choices[0].message.parsed?.files || [];

@@ -1,13 +1,15 @@
 'use client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWebsites } from '@/hooks/useWebsites';
-import { use } from 'react';
+import { use, useEffect } from 'react';
 import { PanelResizeHandle, Panel, PanelGroup } from "react-resizable-panels"
-import { GripVertical, Globe } from "lucide-react"
+import { GripVertical, Globe, Send, RefreshCw, CheckCircle, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Badge } from '@/components/ui/badge';
-// import { useState } from "react"
+import { useState } from "react"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 interface PageProps {
     params: Promise<{
@@ -15,9 +17,242 @@ interface PageProps {
         projectId: string;
     }>;
 }
+
+// Define the type for changeset
+interface ChangeAttribute {
+    name: string;
+    value: string;
+}
+
+interface Change {
+    type: 'replaceText' | 'replaceHTML' | 'insertBefore' | 'insertAfter' | 'remove' | 'setAttribute' | 'addElement';
+    selector: string;
+    content?: string;
+    attribute?: ChangeAttribute;
+}
+
+interface Changeset {
+    title: string;
+    description: string;
+    changes: Change[];
+}
+
 export default function ProjectEditPage({ params }: PageProps) {
     const { projectId, userId } = use(params)
     const { data: websites, isLoading, error } = useWebsites(userId);
+    const [isChatMinimized, setIsChatMinimized] = useState(false);
+    const [prompt, setPrompt] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [messages, setMessages] = useState<Array<{role: 'user' | 'assistant' | 'system', content: string}>>([
+        {role: 'system', content: 'Welcome! Ask me to make changes to your website. I can help you edit the content, styling, or add new features.'}
+    ]);
+    const [previewKey, setPreviewKey] = useState(Date.now());
+    const [hasPreview, setHasPreview] = useState(false);
+    const [changeset, setChangeset] = useState<Changeset | null>(null);
+
+    // Add a useEffect to refresh the preview when hasPreview changes
+    useEffect(() => {
+        if (hasPreview) {
+            // Force a refresh when hasPreview becomes true
+            const newPreviewKey = Date.now();
+            console.log(`useEffect refreshing preview, new key: ${newPreviewKey}`);
+            setPreviewKey(newPreviewKey);
+        }
+    }, [hasPreview]);
+
+    // Function to manually refresh the preview
+    const refreshPreview = () => {
+        console.log("Manual preview refresh requested");
+        const newPreviewKey = Date.now();
+        setPreviewKey(newPreviewKey);
+    };
+
+    // Function to send prompt to the HTML editor API
+    const sendPrompt = async () => {
+        if (!prompt.trim()) return;
+        
+        try {
+            // Add user message to chat
+            const userMessage = {role: 'user' as const, content: prompt};
+            setMessages(prev => [...prev, userMessage]);
+            setPrompt("");
+            setIsSubmitting(true);
+            
+            // Clear any previous changeset
+            setChangeset(null);
+            
+            // Call the edit-html API
+            const response = await fetch('/api/edit-html', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    siteId: projectId,
+                    prompt: prompt,
+                    action: 'edit'
+                }),
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Store changeset if available
+                if (data.changeset) {
+                    setChangeset(data.changeset);
+                    
+                    // Add assistant response with changeset details
+                    setMessages(prev => [...prev, {
+                        role: 'assistant',
+                        content: `I've made the following changes: "${data.changeset.title}"\n\n${data.changeset.description}\n\nYou can review them in the preview panel.`
+                    }]);
+                } else {
+                    // Standard success message if no changeset
+                    setMessages(prev => [...prev, {
+                        role: 'assistant',
+                        content: 'I\'ve created a preview of your requested changes. You can review them in the preview panel.'
+                    }]);
+                }
+                
+                // Add a system message with deploy option
+                setMessages(prev => [...prev, {
+                    role: 'system',
+                    content: 'PREVIEW_READY'
+                }]);
+                
+                // Set hasPreview to true and refresh the preview
+                setHasPreview(true);
+                
+                // Force a refresh of the iframe by updating the previewKey with a unique timestamp
+                const newPreviewKey = Date.now();
+                console.log(`Setting new preview key: ${newPreviewKey}`);
+                setPreviewKey(newPreviewKey);
+            } else {
+                // Add error message
+                setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: `Error: ${data.message}${data.raw_response ? "\n\nRaw AI response has been logged to console." : ""}`
+                }]);
+                
+                if (data.raw_response) {
+                    console.log("Raw AI response:", data.raw_response);
+                }
+            }
+        } catch (error) {
+            console.error("Error sending prompt:", error);
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: 'Sorry, there was an error processing your request.'
+            }]);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Function to deploy changes
+    const deployChanges = async () => {
+        try {
+            setIsSubmitting(true);
+            
+            // Call the edit-html API with deploy action
+            const response = await fetch('/api/edit-html', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    siteId: projectId,
+                    action: 'deploy',
+                    html: 'USE_PREVIEW' // The API will use the latest preview
+                }),
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Add success message
+                setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: `Changes deployed successfully! Your site has been updated.`
+                }]);
+                
+                // Reset the preview state since changes are now deployed
+                setHasPreview(false);
+                setChangeset(null);
+                setPreviewKey(Date.now());
+            } else {
+                // Add error message
+                setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: `Error deploying changes: ${data.message}`
+                }]);
+            }
+        } catch (error) {
+            console.error("Error deploying changes:", error);
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: 'Sorry, there was an error deploying your changes.'
+            }]);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Helper function to render a change description
+    const renderChange = (change: Change, index: number) => {
+        const getChangeIcon = (type: string) => {
+            switch (type) {
+                case 'replaceText':
+                case 'replaceHTML':
+                    return '🔄';
+                case 'insertBefore':
+                case 'insertAfter':
+                case 'addElement':
+                    return '➕';
+                case 'remove':
+                    return '🗑️';
+                case 'setAttribute':
+                    return '🔧';
+                default:
+                    return '✨';
+            }
+        };
+
+        const getChangeDescription = (change: Change) => {
+            switch (change.type) {
+                case 'replaceText':
+                    return `Replace text in "${change.selector}" with "${change.content?.substring(0, 20)}${change.content && change.content.length > 20 ? '...' : ''}"`;
+                case 'replaceHTML':
+                    return `Replace HTML in "${change.selector}"`;
+                case 'insertBefore':
+                    return `Insert content before "${change.selector}"`;
+                case 'insertAfter':
+                    return `Insert content after "${change.selector}"`;
+                case 'remove':
+                    return `Remove "${change.selector}"`;
+                case 'setAttribute':
+                    return change.attribute 
+                        ? `Set attribute "${change.attribute.name}" to "${change.attribute.value}" on "${change.selector}"`
+                        : `Set attribute on "${change.selector}"`;
+                case 'addElement':
+                    return `Add element inside "${change.selector}"`;
+                default:
+                    return `Change to "${change.selector}"`;
+            }
+        };
+
+        return (
+            <div key={index} className="p-2 bg-muted rounded-lg mb-2 text-sm flex items-start">
+                <span className="mr-2">{getChangeIcon(change.type)}</span>
+                <div className="flex-1">
+                    <div>{getChangeDescription(change)}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                        <span className="font-mono bg-background px-1 py-0.5 rounded">{change.selector}</span>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     if (isLoading) return (
         <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -116,15 +351,50 @@ export default function ProjectEditPage({ params }: PageProps) {
                     maxSize={90}
                 >
                     <Card className="h-full flex flex-col">
-                        <CardHeader>
-                            <CardTitle>Site Preview</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <CardTitle>Site Preview</CardTitle>
+                                {hasPreview && (
+                                    <Badge className="bg-amber-500" variant="secondary">
+                                        Draft Preview
+                                    </Badge>
+                                )}
+                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={refreshPreview}
+                                title="Refresh preview"
+                            >
+                                <RefreshCw className="h-4 w-4" />
+                            </Button>
                         </CardHeader>
+                        {changeset && (
+                            <div className="px-6 py-2 border-b">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h3 className="text-sm font-semibold">{changeset.title}</h3>
+                                    <Badge variant="outline" className="text-xs">
+                                        {changeset.changes.length} {changeset.changes.length === 1 ? 'change' : 'changes'}
+                                    </Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground mb-3">{changeset.description}</p>
+                                
+                                <div className="max-h-40 overflow-y-auto">
+                                    {changeset.changes.map((change, index) => renderChange(change, index))}
+                                </div>
+                            </div>
+                        )}
                         <CardContent className="flex-1 p-0">
-                            <div className="h-full w-full border rounded-lg overflow-hidden">
+                            <div className={`h-full w-full border rounded-lg overflow-hidden ${hasPreview ? 'border-amber-500 border-2' : ''}`}>
                                 <iframe
-                                    src={website.project_url}
+                                    key={previewKey}
+                                    src={hasPreview 
+                                        ? `/api/preview-html?siteId=${projectId}&t=${previewKey}` 
+                                        : `${website?.project_url}?t=${previewKey}`}
                                     className="w-full h-full"
                                     title="Website Preview"
+                                    onLoad={() => console.log(`Iframe loaded with key: ${previewKey}, hasPreview: ${hasPreview}`)}
+                                    referrerPolicy="no-referrer"
                                 />
                             </div>
                         </CardContent>
@@ -152,11 +422,71 @@ export default function ProjectEditPage({ params }: PageProps) {
                         </CardHeader>
                         <CardContent className={isChatMinimized ? "hidden" : ""}>
                             <div className="flex flex-col h-[calc(100vh-300px)]">
-                                <div className="flex-1 overflow-y-auto mb-4">
-                                    
+                                <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+                                    {messages.map((message, index) => {
+                                        if (message.role === 'system' && message.content === 'PREVIEW_READY') {
+                                            return (
+                                                <div key={index} className="flex justify-center my-4">
+                                                    <Button 
+                                                        onClick={deployChanges} 
+                                                        disabled={isSubmitting}
+                                                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all animate-pulse hover:animate-none"
+                                                        size="lg"
+                                                    >
+                                                        Deploy Changes
+                                                    </Button>
+                                                </div>
+                                            );
+                                        }
+                                        
+                                        return (
+                                            <div 
+                                                key={index} 
+                                                className={`p-3 rounded-lg ${
+                                                    message.role === 'user' 
+                                                        ? 'bg-primary text-primary-foreground ml-12' 
+                                                        : message.role === 'system' 
+                                                            ? 'bg-muted text-muted-foreground italic text-sm' 
+                                                            : 'bg-muted mr-12 border'
+                                                }`}
+                                            >
+                                                {message.content}
+                                            </div>
+                                        );
+                                    })}
+                                    {isSubmitting && (
+                                        <div className="p-3 rounded-lg bg-muted mr-12 border">
+                                            <div className="flex space-x-2 items-center">
+                                                <div className="animate-pulse">●</div>
+                                                <div className="animate-pulse delay-150">●</div>
+                                                <div className="animate-pulse delay-300">●</div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="border-t pt-4">
-
+                                    <form 
+                                        onSubmit={(e) => {
+                                            e.preventDefault();
+                                            sendPrompt();
+                                        }}
+                                        className="flex items-end gap-2"
+                                    >
+                                        <Textarea
+                                            value={prompt}
+                                            onChange={(e) => setPrompt(e.target.value)}
+                                            placeholder="Describe the changes you want to make..."
+                                            className="flex-1 min-h-[80px]"
+                                            disabled={isSubmitting}
+                                        />
+                                        <Button 
+                                            type="submit" 
+                                            size="icon"
+                                            disabled={isSubmitting || !prompt.trim()}
+                                        >
+                                            <Send className="h-4 w-4" />
+                                        </Button>
+                                    </form>
                                 </div>
                             </div>
                         </CardContent>

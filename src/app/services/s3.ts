@@ -8,6 +8,7 @@ import {
   DeleteObjectsCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
+import { fromEnv } from "@aws-sdk/credential-providers";
 
 export type DeploymentFile = {
   name: string;
@@ -23,22 +24,24 @@ export class S3Service {
 
   constructor() {
     this.region = process.env.CUSTOM_REGION || "us-east-2";
-    this.bucketName = process.env.S3_BUCKET_NAME!;
+    this.bucketName = process.env.S3_BUCKET_NAME || "myaisitebuilder";
     this.websiteEndpoint = `https://${this.bucketName}.s3.${this.region}.amazonaws.com`;
 
     if (!this.bucketName) {
       throw new Error("S3_BUCKET_NAME environment variable is required");
     }
 
+    // Use the AWS SDK's credential provider chain that tries multiple sources
     this.s3 = new S3Client({
       region: this.region,
-      credentials: {
-        accessKeyId: process.env.CUSTOM_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.CUSTOM_SECRET_ACCESS_KEY!,
-      },
+      credentials: fromEnv(),
       endpoint: `https://s3.${this.region}.amazonaws.com`,
       forcePathStyle: false,
     });
+  }
+
+  public getS3Client(): S3Client {
+    return this.s3;
   }
 
   private async ensurePublicAccess() {
@@ -52,10 +55,7 @@ export class S3Service {
           Principal: "*",
           Action: "s3:GetObject",
           Resource: [
-            `arn:aws:s3:::${this.bucketName}`,
             `arn:aws:s3:::${this.bucketName}/*`,
-            `arn:aws:s3:::${this.bucketName}/*/*`,
-            `arn:aws:s3:::${this.bucketName}/*/*/*`,
           ],
         },
       ],
@@ -132,6 +132,7 @@ export class S3Service {
           Key: key,
           Body: file.content,
           ContentType: file.contentType || "text/html",
+          ACL: 'public-read',
         });
 
         console.log(`S3Service: Preparing to upload ${key}`);
