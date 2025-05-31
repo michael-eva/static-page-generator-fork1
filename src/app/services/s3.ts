@@ -132,7 +132,6 @@ export class S3Service {
           Key: key,
           Body: file.content,
           ContentType: file.contentType || "text/html",
-          ACL: 'public-read',
         });
 
         console.log(`S3Service: Preparing to upload ${key}`);
@@ -269,6 +268,46 @@ export class S3Service {
       const url = `${this.websiteEndpoint}/${key}`;
       console.log(`S3Service: Asset uploaded successfully, URL: ${url}`);
       return { url, metadata };
+    } catch (error) {
+      console.error(`S3Service: Upload failed for ${fileName}:`, error);
+      console.error(
+        "S3Service: Error details:",
+        JSON.stringify(error, null, 2)
+      );
+      throw error;
+    }
+  }
+
+  async uploadGenericAsset(
+    buffer: ArrayBuffer,
+    fileName: string,
+    contentType: string,
+    type: string,
+    siteId: string
+  ): Promise<{ url: string }> {
+    console.log(`S3Service: Uploading generic asset ${fileName} for site ${siteId}`);
+    const key = `${siteId}/assets/${type}s/${fileName}`;
+
+    try {
+      console.log(`S3Service: Uploading to ${key}`);
+      await this.s3.send(
+        new PutObjectCommand({
+          Bucket: this.bucketName,
+          Key: key,
+          Body: Buffer.from(buffer),
+          ContentType: contentType,
+          Metadata: {
+            originalFileName: fileName,
+            fileType: contentType,
+            uploadedAt: new Date().toISOString(),
+          },
+        })
+      );
+
+      // Use website endpoint format consistently
+      const url = `${this.websiteEndpoint}/${key}`;
+      console.log(`S3Service: Generic asset uploaded successfully, URL: ${url}`);
+      return { url };
     } catch (error) {
       console.error(`S3Service: Upload failed for ${fileName}:`, error);
       console.error(
