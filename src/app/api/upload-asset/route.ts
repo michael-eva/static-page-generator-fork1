@@ -24,30 +24,15 @@ export async function POST(request: Request) {
     const fileName = `${crypto.randomUUID()}-${file.name}`;
     const contentType = file.type;
 
-    // Check if this is an image file
-    const isImage = contentType.startsWith('image/');
-    
-    if (isImage) {
-      // Use the existing uploadAsset method for images (includes metadata)
-      const { url, metadata } = await s3.uploadAsset(
-        buffer,
-        fileName,
-        contentType,
-        type,
-        siteId
-      );
-      return NextResponse.json({ url, metadata });
-    } else {
-      // Use the new uploadGenericAsset method for all other file types
-      const { url } = await s3.uploadGenericAsset(
-        buffer,
-        fileName,
-        contentType,
-        type,
-        siteId
-      );
-      return NextResponse.json({ url });
-    }
+    const { url, metadata } = await s3.uploadAsset(
+      buffer,
+      fileName,
+      contentType,
+      type,
+      siteId
+    );
+
+    return NextResponse.json({ url, metadata });
   } catch (error) {
     console.error("Error uploading asset:", error);
     return NextResponse.json(

@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -13,7 +13,7 @@ export function cn(...inputs: ClassValue[]) {
 export function copyToClipboard(text: string): Promise<void> {
   if (!navigator.clipboard) {
     // Fallback or error handling for older browsers might be needed
-    return Promise.reject('Clipboard API not available');
+    return Promise.reject("Clipboard API not available");
   }
   return navigator.clipboard.writeText(text);
 }

@@ -1,4 +1,4 @@
-import { MoreHorizontal, Edit3, Globe } from "lucide-react"
+import { MoreHorizontal } from "lucide-react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -49,16 +49,31 @@ export default function WebsiteCard(props: Props) {
             setDeletingId(null)
         }
     }
-
+    const previewUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/proxy?url=${encodeURIComponent(project.preview_url)}`
     return (
         <Card
             key={props.projectId}
             className="overflow-hidden"
         >
+            <div className="aspect-video relative cursor-pointer"
+                onClick={(e) => {
+                    // Only navigate if the click target is the card or its non-dropdown children
+                    if (!e.defaultPrevented) {
+                        router.push(`/${props.userId}/edit/${project.site_id}`)
+                    }
+                }}>
+                <Image
+                    src={previewUrl || "/placeholder.svg"}
+                    alt={project.name}
+                    fill
+                    className="object-cover hover:scale-105 transition-transform duration-300"
+                    priority
+                />
+            </div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div className="flex flex-col">
                     <CardTitle className="text-xl font-medium tracking-tight">{project.name}</CardTitle>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-muted-foreground ml-auto">
                         Updated {new Date(project.updated_at).toLocaleString('en-US', {
                             year: 'numeric',
                             month: 'short',
@@ -92,6 +107,7 @@ export default function WebsiteCard(props: Props) {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+
             </CardHeader>
             <CardContent>
                 <div className="flex flex-wrap items-center gap-2">
@@ -126,7 +142,7 @@ export default function WebsiteCard(props: Props) {
                     ) : (
                         <Badge variant="outline" className="rounded-full px-3 text-muted-foreground border-muted">
                             <svg className="w-3 h-3 mr-1 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 919-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                             </svg>
                             Domain Not Connected
                         </Badge>
@@ -135,14 +151,8 @@ export default function WebsiteCard(props: Props) {
             </CardContent>
             <CardFooter className="flex justify-between">
                 <div className="flex gap-2">
-                    <Link href={`/${props.userId}/edit/${project.site_id}`}>
-                        <Button variant="outline">
-                            <Edit3 className="mr-2 h-4 w-4" />
-                            Edit Site
-                        </Button>
-                    </Link>
-                    <Link href={project.project_url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline">View Website</Button>
+                    <Link href={`${process.env.NEXT_PUBLIC_SITE_URL}/api/proxy?siteId=${project.site_id}`} target="_blank" rel="noopener noreferrer">
+                        <Button>View Website</Button>
                     </Link>
                     {project.domain_setups[0]?.completed && (
                         <Link
@@ -156,10 +166,7 @@ export default function WebsiteCard(props: Props) {
                 </div>
                 {!project.domain_setups[0]?.completed && (
                     <Link href={`/${props.userId}/edit/${project.site_id}/domain`} rel="noopener noreferrer">
-                        <Button>
-                            <Globe className="mr-2 h-4 w-4" />
-                            Connect Domain
-                        </Button>
+                        <Button>Connect Domain</Button>
                     </Link>
                 )}
             </CardFooter>

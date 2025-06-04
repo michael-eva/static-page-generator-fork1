@@ -6,8 +6,7 @@ import { supabase } from "@/lib/supabase/server/supsbase";
 import { PreviewService } from "@/app/services/preview";
 import { BusinessInfoSchema } from "../../../../types/business";
 import { checkUserProjectLimit } from "./helper";
-// import { LandingPageGenerator } from "@/app/services/claude-generator";
-import { LandingPageGenerator } from "@/app/services/generator";
+import { LandingPageGenerator } from "@/app/services/claude-generator";
 
 const s3 = new S3Service();
 const generator = new LandingPageGenerator();

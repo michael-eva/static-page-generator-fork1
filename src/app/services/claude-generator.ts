@@ -632,7 +632,7 @@ Only provide the complete HTML document as your response, nothing else before or
 
       const requestPayload = {
         model: "claude-3-7-sonnet-20250219",
-        max_tokens: 70000,
+        max_tokens: 8000,
         system: systemPrompt,
         messages: [
           {
