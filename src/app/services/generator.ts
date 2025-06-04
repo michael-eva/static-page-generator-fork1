@@ -84,7 +84,7 @@ export class LandingPageGenerator {
       businessInfo.design_preferences.color_palette?.roles || {};
 
     const completion = await this.openai.beta.chat.completions.parse({
-      model: "gpt-4o",
+      model: "o3-2025-04-16",
       messages: [
         {
           role: "system",
@@ -156,7 +156,7 @@ I specifically need:
         },
       ],
       response_format: zodResponseFormat(GeneratedFiles, "json"),
-      max_tokens: 4000,
+      max_completion_tokens: 70000,
     });
 
     const files = completion.choices[0].message.parsed?.files || [];

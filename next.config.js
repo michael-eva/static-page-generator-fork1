@@ -9,13 +9,18 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'myaisitebuilder.s3.us-east-2.amazonaws.com',
-      },
-      {
-        protocol: 'http',
-        hostname: 'localhost',
       }
     ],
   },
+  // Ensure the local-storage directory is accessible
+  async rewrites() {
+    return [
+      {
+        source: '/local-storage/:path*',
+        destination: '/public/local-storage/:path*',
+      },
+    ];
+  }
 }
 
 module.exports = nextConfig 

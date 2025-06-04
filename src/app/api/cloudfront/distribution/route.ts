@@ -38,7 +38,7 @@ export async function GET(request: Request) {
           cloudfront_domain: distribution.DomainName,
           cloudfront_id: distribution.Id,
         })
-        .eq("site_id", siteId)
+        .eq("id", siteId)
         .select()
         .single();
 
