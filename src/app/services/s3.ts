@@ -3,9 +3,12 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
+  PutBucketPolicyCommand,
+  PutBucketCorsCommand,
   DeleteObjectsCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
+import { fromEnv } from "@aws-sdk/credential-providers";
 
 export type DeploymentFile = {
   name: string;
@@ -21,91 +24,90 @@ export class S3Service {
 
   constructor() {
     this.region = process.env.CUSTOM_REGION || "us-east-2";
-    this.bucketName = process.env.S3_BUCKET_NAME!;
+    this.bucketName = process.env.S3_BUCKET_NAME || "myaisitebuilder";
     this.websiteEndpoint = `https://${this.bucketName}.s3.${this.region}.amazonaws.com`;
 
     if (!this.bucketName) {
       throw new Error("S3_BUCKET_NAME environment variable is required");
     }
 
+    // Use the AWS SDK's credential provider chain that tries multiple sources
     this.s3 = new S3Client({
       region: this.region,
-      credentials: {
-        accessKeyId: process.env.CUSTOM_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.CUSTOM_SECRET_ACCESS_KEY!,
-      },
+      credentials: fromEnv(),
       endpoint: `https://s3.${this.region}.amazonaws.com`,
       forcePathStyle: false,
     });
   }
 
-  // private async ensurePublicAccess() {
-  //   // Set bucket policy
-  //   const bucketPolicy = {
-  //     Version: "2012-10-17",
-  //     Statement: [
-  //       {
-  //         Sid: "PublicReadGetObject",
-  //         Effect: "Allow",
-  //         Principal: "*",
-  //         Action: "s3:GetObject",
-  //         Resource: [
-  //           `arn:aws:s3:::${this.bucketName}`,
-  //           `arn:aws:s3:::${this.bucketName}/*`,
-  //           `arn:aws:s3:::${this.bucketName}/*/*`,
-  //           `arn:aws:s3:::${this.bucketName}/*/*/*`,
-  //         ],
-  //       },
-  //     ],
-  //   };
+  public getS3Client(): S3Client {
+    return this.s3;
+  }
 
-  //   const corsConfiguration = {
-  //     CORSRules: [
-  //       {
-  //         AllowedOrigins: ["*"],
-  //         AllowedMethods: ["GET", "HEAD"],
-  //         AllowedHeaders: ["*"],
-  //         MaxAgeSeconds: 3000,
-  //       },
-  //     ],
-  //   };
+  private async ensurePublicAccess() {
+    // Set bucket policy
+    const bucketPolicy = {
+      Version: "2012-10-17",
+      Statement: [
+        {
+          Sid: "PublicReadGetObject",
+          Effect: "Allow",
+          Principal: "*",
+          Action: "s3:GetObject",
+          Resource: [
+            `arn:aws:s3:::${this.bucketName}/*`,
+          ],
+        },
+      ],
+    };
 
-  //   try {
-  //     console.log("S3Service: Setting bucket policy");
-  //     console.log(
-  //       "S3Service: Bucket policy:",
-  //       JSON.stringify(bucketPolicy, null, 2)
-  //     );
+    const corsConfiguration = {
+      CORSRules: [
+        {
+          AllowedOrigins: ["*"],
+          AllowedMethods: ["GET", "HEAD"],
+          AllowedHeaders: ["*"],
+          MaxAgeSeconds: 3000,
+        },
+      ],
+    };
 
-  //     await this.s3.send(
-  //       new PutBucketPolicyCommand({
-  //         Bucket: this.bucketName,
-  //         Policy: JSON.stringify(bucketPolicy),
-  //       })
-  //     );
-  //     console.log("S3Service: Bucket policy set successfully");
+    try {
+      console.log("S3Service: Setting bucket policy");
+      console.log(
+        "S3Service: Bucket policy:",
+        JSON.stringify(bucketPolicy, null, 2)
+      );
 
-  //     console.log("S3Service: Setting CORS configuration");
-  //     await this.s3.send(
-  //       new PutBucketCorsCommand({
-  //         Bucket: this.bucketName,
-  //         CORSConfiguration: corsConfiguration,
-  //       })
-  //     );
-  //     console.log("S3Service: CORS configuration set successfully");
-  //   } catch (error) {
-  //     console.error("S3Service: Error in ensurePublicAccess:");
-  //     console.error(
-  //       "S3Service: Error details:",
-  //       JSON.stringify(error, null, 2)
-  //     );
-  //     console.error(
-  //       "S3Service: Error stack:",
-  //       error instanceof Error ? error.stack : "No stack trace"
-  //     );
-  //     throw error;
-  //   }
-  // }
+      await this.s3.send(
+        new PutBucketPolicyCommand({
+          Bucket: this.bucketName,
+          Policy: JSON.stringify(bucketPolicy),
+        })
+      );
+      console.log("S3Service: Bucket policy set successfully");
+
+      console.log("S3Service: Setting CORS configuration");
+      await this.s3.send(
+        new PutBucketCorsCommand({
+          Bucket: this.bucketName,
+          CORSConfiguration: corsConfiguration,
+        })
+      );
+      console.log("S3Service: CORS configuration set successfully");
+    } catch (error) {
+      console.error("S3Service: Error in ensurePublicAccess:");
+      console.error(
+        "S3Service: Error details:",
+        JSON.stringify(error, null, 2)
+      );
+      console.error(
+        "S3Service: Error stack:",
+        error instanceof Error ? error.stack : "No stack trace"
+      );
+      throw error;
+    }
+  }
 
   async deploy(
     siteId: string,
@@ -117,6 +119,10 @@ export class S3Service {
     });
 
     try {
+      console.log("S3Service: Ensuring public access");
+      await this.ensurePublicAccess();
+      console.log("S3Service: Public access ensured successfully");
+
       console.log("S3Service: Creating upload promises");
       const uploadPromises = files.map((file) => {
         const key = `${siteId}/${file.name}`;
@@ -262,6 +268,46 @@ export class S3Service {
       const url = `${this.websiteEndpoint}/${key}`;
       console.log(`S3Service: Asset uploaded successfully, URL: ${url}`);
       return { url, metadata };
+    } catch (error) {
+      console.error(`S3Service: Upload failed for ${fileName}:`, error);
+      console.error(
+        "S3Service: Error details:",
+        JSON.stringify(error, null, 2)
+      );
+      throw error;
+    }
+  }
+
+  async uploadGenericAsset(
+    buffer: ArrayBuffer,
+    fileName: string,
+    contentType: string,
+    type: string,
+    siteId: string
+  ): Promise<{ url: string }> {
+    console.log(`S3Service: Uploading generic asset ${fileName} for site ${siteId}`);
+    const key = `${siteId}/assets/${type}s/${fileName}`;
+
+    try {
+      console.log(`S3Service: Uploading to ${key}`);
+      await this.s3.send(
+        new PutObjectCommand({
+          Bucket: this.bucketName,
+          Key: key,
+          Body: Buffer.from(buffer),
+          ContentType: contentType,
+          Metadata: {
+            originalFileName: fileName,
+            fileType: contentType,
+            uploadedAt: new Date().toISOString(),
+          },
+        })
+      );
+
+      // Use website endpoint format consistently
+      const url = `${this.websiteEndpoint}/${key}`;
+      console.log(`S3Service: Generic asset uploaded successfully, URL: ${url}`);
+      return { url };
     } catch (error) {
       console.error(`S3Service: Upload failed for ${fileName}:`, error);
       console.error(
